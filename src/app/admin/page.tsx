@@ -1039,7 +1039,47 @@ După ce ne confirmați grafica și datele de mai sus, vom prelucra comanda.`;
 
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [settingsTab, setSettingsTab] = useState<"site" | "fancourier" | "sameday" | "fgo" | "pixels" | "whatsapp" | "addons">("site");
+  const [settingsTab, setSettingsTab] = useState<"site" | "fancourier" | "sameday" | "fgo" | "pixels" | "whatsapp" | "addons" | "feed">("site");
+
+  // Feed stats
+  const [feedStats, setFeedStats] = useState<Record<string, { items: number; skipped: number; generated_at: string } | null>>({ google: null, facebook: null, tiktok: null });
+  const [feedRefreshing, setFeedRefreshing] = useState(false);
+  const [feedMsg, setFeedMsg] = useState("");
+
+  useEffect(() => {
+    if (settingsTab !== "feed") return;
+    fetch("/api/admin/feed", { headers: { Authorization: auth } })
+      .then((r) => r.json())
+      .then((d) => { if (d.stats) setFeedStats(d.stats); })
+      .catch(() => {});
+  }, [settingsTab, auth]);
+
+  const refreshFeeds = async () => {
+    setFeedRefreshing(true);
+    setFeedMsg("");
+    try {
+      const res = await fetch("/api/admin/feed", { method: "POST", headers: { Authorization: auth } });
+      const data = await res.json();
+      if (data.results) {
+        const newStats: typeof feedStats = { google: null, facebook: null, tiktok: null };
+        for (const [p, r] of Object.entries(data.results)) {
+          const result = r as { items?: number; skipped?: number; generated_at?: string; error?: string };
+          if (result.items !== undefined && result.generated_at) {
+            newStats[p] = { items: result.items, skipped: result.skipped || 0, generated_at: result.generated_at };
+          }
+        }
+        setFeedStats(newStats);
+        setFeedMsg("Feed-uri regenerate cu succes!");
+      } else {
+        setFeedMsg("Eroare la regenerare.");
+      }
+    } catch (e) {
+      setFeedMsg("Eroare: " + String(e));
+    } finally {
+      setFeedRefreshing(false);
+      setTimeout(() => setFeedMsg(""), 5000);
+    }
+  };
 
   // Addon groups
   const [addonGroups, setAddonGroups] = useState<{id:string;name:string;fields:{id:string;type:string;label:string;placeholder?:string;required?:boolean;options?:{label:string;value:string;image_url?:string;price_impact?:number}[]}[]}[]>([]);
@@ -1178,6 +1218,7 @@ După ce ne confirmați grafica și datele de mai sus, vom prelucra comanda.`;
         <button className={`admin-settings__tab ${settingsTab === "pixels" ? "admin-settings__tab--active" : ""}`} onClick={() => setSettingsTab("pixels")}>Pixeli & Tracking</button>
         <button className={`admin-settings__tab ${settingsTab === "whatsapp" ? "admin-settings__tab--active" : ""}`} onClick={() => setSettingsTab("whatsapp")}>WhatsApp</button>
         <button className={`admin-settings__tab ${settingsTab === "addons" ? "admin-settings__tab--active" : ""}`} onClick={() => setSettingsTab("addons")}>Campuri Addons</button>
+        <button className={`admin-settings__tab ${settingsTab === "feed" ? "admin-settings__tab--active" : ""}`} onClick={() => setSettingsTab("feed")}>Feed Produse</button>
       </div>
 
       {settingsTab === "site" && (
@@ -1589,10 +1630,77 @@ După ce ne confirmați grafica și datele de mai sus, vom prelucra comanda.`;
         </div>
       )}
 
-      <div style={{ marginTop: 16, display: "flex", gap: 12, alignItems: "center" }}>
-        <button className="admin-add-btn" onClick={save}>Salveaza setarile</button>
-        {saved && <span style={{ color: "var(--color-success)", fontSize: "0.82rem", fontWeight: 600 }}>Salvat!</span>}
-      </div>
+      {settingsTab === "feed" && (
+        <div className="admin-settings__section">
+          <h3>Feed-uri produse (Google Shopping, Meta, TikTok)</h3>
+          <p className="admin-settings__desc">
+            Feed-urile sunt generate automat din catalogul de produse si actualizate zilnic prin cron.
+            Poti forta regenerarea cu butonul de mai jos.
+          </p>
+
+          <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+            {(["google", "facebook", "tiktok"] as const).map((platform) => {
+              const s = feedStats[platform];
+              const platformLabel = platform === "google" ? "Google Merchant Center" : platform === "facebook" ? "Meta Catalog (Facebook/Instagram)" : "TikTok Catalog";
+              const feedUrl = `https://olivox.ro/feed/${platform}.xml`;
+              return (
+                <div key={platform} style={{ border: "1.5px solid var(--color-border)", borderRadius: "var(--radius-sm)", padding: 14, background: "#fff" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                    <strong style={{ fontSize: "0.9rem" }}>{platformLabel}</strong>
+                    <a href={`/feed/${platform}.xml`} target="_blank" rel="noreferrer" style={{ fontSize: "0.75rem", color: "var(--color-primary)", textDecoration: "none" }}>Deschide feed</a>
+                  </div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", wordBreak: "break-all", marginBottom: 8, padding: "6px 8px", background: "var(--color-bg)", borderRadius: 4 }}>
+                    {feedUrl}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, fontSize: "0.78rem" }}>
+                    <div>
+                      <div style={{ color: "var(--color-text-muted)", fontSize: "0.7rem" }}>Produse in feed</div>
+                      <div style={{ fontWeight: 700, fontSize: "1rem" }}>{s ? s.items : "—"}</div>
+                    </div>
+                    <div>
+                      <div style={{ color: "var(--color-text-muted)", fontSize: "0.7rem" }}>Omise (fara imagine/pret)</div>
+                      <div style={{ fontWeight: 700, fontSize: "1rem", color: s?.skipped ? "#f59e0b" : undefined }}>{s ? s.skipped : "—"}</div>
+                    </div>
+                    <div>
+                      <div style={{ color: "var(--color-text-muted)", fontSize: "0.7rem" }}>Ultima generare</div>
+                      <div style={{ fontWeight: 600, fontSize: "0.78rem" }}>{s ? formatShortDate(s.generated_at) : "Niciodata"}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ marginTop: 20, padding: 14, background: "rgba(0,102,204,0.05)", borderRadius: "var(--radius-sm)", border: "1px solid rgba(0,102,204,0.15)" }}>
+            <h4 style={{ margin: "0 0 8px", fontSize: "0.85rem" }}>Cum conectez feed-urile?</h4>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: "0.76rem", color: "var(--color-text-muted)", lineHeight: 1.7 }}>
+              <li><strong>Google Merchant Center:</strong> Produse → Feed-uri → Adauga → URL programat → copiaza URL-ul Google</li>
+              <li><strong>Meta Commerce Manager:</strong> Catalog → Fluxuri de date → URL programat → copiaza URL-ul Facebook</li>
+              <li><strong>TikTok Ads Manager:</strong> Active → Catalog → Surse → URL feed → copiaza URL-ul TikTok</li>
+            </ul>
+          </div>
+
+          <div style={{ marginTop: 16, display: "flex", gap: 12, alignItems: "center" }}>
+            <button
+              type="button"
+              className="admin-add-btn"
+              onClick={refreshFeeds}
+              disabled={feedRefreshing}
+              style={{ opacity: feedRefreshing ? 0.6 : 1 }}
+            >
+              {feedRefreshing ? "Se regenereaza..." : "Regenereaza toate feed-urile acum"}
+            </button>
+            {feedMsg && <span style={{ fontSize: "0.8rem", color: feedMsg.startsWith("Eroare") ? "#dc2626" : "var(--color-success)", fontWeight: 600 }}>{feedMsg}</span>}
+          </div>
+        </div>
+      )}
+
+      {settingsTab !== "feed" && (
+        <div style={{ marginTop: 16, display: "flex", gap: 12, alignItems: "center" }}>
+          <button className="admin-add-btn" onClick={save}>Salveaza setarile</button>
+          {saved && <span style={{ color: "var(--color-success)", fontSize: "0.82rem", fontWeight: 600 }}>Salvat!</span>}
+        </div>
+      )}
     </div>
   );
 }

@@ -60,17 +60,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const { data: products } = await supabase
       .from("products")
-      .select("slug, category_slugs, imported_at")
+      .select("slug, category_slugs, imported_at, image_url, r2_image_url")
       .order("id", { ascending: false })
       .limit(5000);
     productUrls = (products || [])
       .filter((p) => p.slug && p.category_slugs && p.category_slugs.length > 0)
-      .map((p) => ({
-        url: `${BASE}/produse/${p.category_slugs[0]}/${p.slug}`,
-        lastModified: p.imported_at ? new Date(p.imported_at) : now,
-        changeFrequency: "weekly",
-        priority: 0.6,
-      }));
+      .map((p) => {
+        const img = p.r2_image_url || p.image_url;
+        return {
+          url: `${BASE}/produse/${p.category_slugs[0]}/${p.slug}`,
+          lastModified: p.imported_at ? new Date(p.imported_at) : now,
+          changeFrequency: "weekly" as const,
+          priority: 0.6,
+          ...(img ? { images: [img] } : {}),
+        };
+      });
   } catch {}
 
   let articleUrls: MetadataRoute.Sitemap = [];

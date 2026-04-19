@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { supabase } from "@/lib/supabase";
+import { buildFeed } from "@/lib/feed-builder";
 
 // Cron job: sync AWB tracking status from FanCourier and Sameday
 // Run daily via Vercel Cron or external cron service
@@ -278,9 +280,22 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // ---- Rebuild product feeds (Google, Meta, TikTok) ----
+  const feedResult: Record<string, { items: number; skipped: number } | { error: string }> = {};
+  for (const platform of ["google", "facebook", "tiktok"] as const) {
+    try {
+      const { stats } = await buildFeed(platform);
+      feedResult[platform] = { items: stats.items, skipped: stats.skipped };
+      revalidatePath(`/feed/${platform}.xml`);
+    } catch (e) {
+      feedResult[platform] = { error: String(e) };
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     fancourier: fanResult,
     sameday: sdResult,
+    feeds: feedResult,
   });
 }
