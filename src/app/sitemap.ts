@@ -56,6 +56,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
   } catch {}
 
+  const absUrl = (u: string | null | undefined): string | null => {
+    if (!u) return null;
+    if (u.startsWith("http://") || u.startsWith("https://")) return u;
+    if (u.startsWith("/")) return `${BASE}${u}`;
+    return null;
+  };
+
   let productUrls: MetadataRoute.Sitemap = [];
   try {
     const { data: products } = await supabase
@@ -66,7 +73,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     productUrls = (products || [])
       .filter((p) => p.slug && p.category_slugs && p.category_slugs.length > 0)
       .map((p) => {
-        const img = p.r2_image_url || p.image_url;
+        const img = absUrl(p.r2_image_url) || absUrl(p.image_url);
         return {
           url: `${BASE}/produse/${p.category_slugs[0]}/${p.slug}`,
           lastModified: p.imported_at ? new Date(p.imported_at) : now,
