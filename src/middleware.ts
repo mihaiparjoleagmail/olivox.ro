@@ -14,9 +14,18 @@ const KNOWN_PREFIXES = [
   "/termeni-si-conditii",
   "/politica-confidentialitate",
   "/politica-cookies",
+  "/livrare-si-retur",
+  "/despre",
+  "/de-ce-snep",
+  "/ghid",
+  "/brand",
+  "/glosar",
+  "/intrebari-frecvente",
+  "/feed",
   "/favicon",
   "/robots.txt",
   "/sitemap.xml",
+  "/sitemap-images.xml",
   "/manifest",
 ];
 
