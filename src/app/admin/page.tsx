@@ -85,7 +85,27 @@ const STATUS_COLORS: Record<string, string> = {
   "in procesare": "#f59e0b", finalizata: "#10b981", livrat: "#059669", anulata: "#6b7280", retur: "#dc2626",
 };
 
-type Tab = "dashboard" | "comenzi" | "categorii" | "produse" | "homepage" | "recenzii" | "statistici" | "setari";
+type Tab = "dashboard" | "comenzi" | "abandonate" | "categorii" | "produse" | "homepage" | "recenzii" | "statistici" | "setari";
+
+interface AbandonedCart {
+  id: number;
+  session_id: string;
+  created_at: string;
+  last_seen_at: string;
+  customer_name: string | null;
+  customer_phone: string | null;
+  customer_email: string | null;
+  address: string | null;
+  product_id: number | null;
+  product_name: string | null;
+  product_slug: string | null;
+  brand_name: string | null;
+  model_name: string | null;
+  snapshot: Record<string, unknown> | null;
+  user_agent: string | null;
+  url: string | null;
+  resolved_at: string | null;
+}
 
 export default function AdminPage() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -95,6 +115,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [newOrdersCount, setNewOrdersCount] = useState(0);
+  const [abandonedCount, setAbandonedCount] = useState(0);
   const [directOrderId, setDirectOrderId] = useState<number | null>(null);
   const [ordersRefreshKey, setOrdersRefreshKey] = useState(0);
 
@@ -109,6 +130,10 @@ export default function AdminPage() {
         .then(r => r.json())
         .then(data => { if (Array.isArray(data)) { setAllOrders(data); setNewOrdersCount(data.filter((o: Order) => o.status === "in procesare").length); } })
         .catch(() => {});
+      fetch("/api/admin/abandoned-carts", { headers: { Authorization: saved } })
+        .then(r => r.json())
+        .then(data => { if (Array.isArray(data)) setAbandonedCount(data.filter((f: { resolved_at: string | null }) => !f.resolved_at).length); })
+        .catch(() => {});
     }
   }, []);
 
@@ -119,6 +144,10 @@ export default function AdminPage() {
       setAuthHeader(auth); setLoggedIn(true); sessionStorage.setItem("admin_auth", auth);
       const data = await res.json();
       if (Array.isArray(data)) { setAllOrders(data); setNewOrdersCount(data.filter((o: Order) => o.status === "in procesare").length); }
+      fetch("/api/admin/abandoned-carts", { headers: { Authorization: auth } })
+        .then(r => r.json())
+        .then(d => { if (Array.isArray(d)) setAbandonedCount(d.filter((f: { resolved_at: string | null }) => !f.resolved_at).length); })
+        .catch(() => {});
     }
   };
 
@@ -149,6 +178,11 @@ export default function AdminPage() {
         <div className="admin-tabs">
           <button className={`admin-tab ${tab === "comenzi" ? "admin-tab--active" : ""}`} onClick={() => { setTab("comenzi"); setOrdersRefreshKey(Date.now()); if (directOrderId) { setDirectOrderId(null); window.history.replaceState({}, "", "/admin"); } }}>
             Comenzi{newOrdersCount > 0 && <span className="admin-tab__badge">{newOrdersCount}</span>}
+          </button>
+          <button className={`admin-tab ${tab === "abandonate" ? "admin-tab--active" : ""}`} onClick={() => setTab("abandonate")} title="Cosuri abandonate">
+            <span className="admin-tab__text">Abandonate</span>
+            {abandonedCount > 0 && <span className="admin-tab__badge" style={{ background: "#f59e0b" }}>{abandonedCount}</span>}
+            <svg className="admin-tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
           </button>
           <button className={`admin-tab ${tab === "statistici" ? "admin-tab--active" : ""}`} onClick={() => setTab("statistici")}>
             <span className="admin-tab__text">Statistici</span>
@@ -181,6 +215,7 @@ export default function AdminPage() {
 
       {tab === "dashboard" && <DashboardPanel orders={allOrders} onNavigate={setTab} />}
       {tab === "comenzi" && <OrdersPanel key={`${directOrderId || "list"}-${ordersRefreshKey}`} auth={authHeader} onCountUpdate={(n) => { setNewOrdersCount(n); }} onOrdersLoaded={setAllOrders} initialOrderId={directOrderId} />}
+      {tab === "abandonate" && <AbandonedCartsPanel auth={authHeader} onCountUpdate={setAbandonedCount} />}
       {tab === "statistici" && <StatisticsPanel orders={allOrders} />}
       {tab === "categorii" && <CategoriesPanel auth={authHeader} />}
       {tab === "produse" && <ProductsPanel auth={authHeader} />}
@@ -3106,6 +3141,137 @@ function ReviewsPanel({ auth }: { auth: string }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===== ABANDONED CARTS PANEL =====
+function AbandonedCartsPanel({ auth, onCountUpdate }: { auth: string; onCountUpdate: (n: number) => void }) {
+  const [rows, setRows] = useState<AbandonedCart[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<"open" | "resolved" | "all">("open");
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  const onCountRef = useRef(onCountUpdate);
+  onCountRef.current = onCountUpdate;
+
+  const fetchRows = useCallback(async () => {
+    setLoading(true);
+    const r = await fetch("/api/admin/abandoned-carts", { headers: { Authorization: auth } });
+    if (r.ok) {
+      const data = await r.json();
+      if (Array.isArray(data)) {
+        setRows(data);
+        onCountRef.current(data.filter((f: AbandonedCart) => !f.resolved_at).length);
+      }
+    }
+    setLoading(false);
+  }, [auth]);
+
+  useEffect(() => { fetchRows(); }, [fetchRows]);
+
+  const toggleResolved = async (id: number, currentlyResolved: boolean) => {
+    await fetch("/api/admin/abandoned-carts", {
+      method: "PATCH",
+      headers: { Authorization: auth, "Content-Type": "application/json" },
+      body: JSON.stringify({ id, resolved: !currentlyResolved }),
+    });
+    fetchRows();
+  };
+
+  const deleteRow = async (id: number) => {
+    if (!confirm("Stergi inregistrarea permanent?")) return;
+    await fetch("/api/admin/abandoned-carts", {
+      method: "DELETE",
+      headers: { Authorization: auth, "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    fetchRows();
+  };
+
+  const filtered = rows.filter((f) => {
+    if (statusFilter === "open" && f.resolved_at) return false;
+    if (statusFilter === "resolved" && !f.resolved_at) return false;
+    return true;
+  });
+
+  const timeAgo = (iso: string) => {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.round(diff / 60000);
+    if (mins < 1) return "acum";
+    if (mins < 60) return `${mins} min`;
+    const hours = Math.round(mins / 60);
+    if (hours < 24) return `${hours} h`;
+    const days = Math.round(hours / 24);
+    return `${days} zile`;
+  };
+
+  return (
+    <div style={{ padding: 16 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <button className={`ot-sf ${statusFilter === "open" ? "ot-sf--active" : ""}`} style={statusFilter === "open" ? { background: "#f59e0b", color: "#fff" } : {}} onClick={() => setStatusFilter("open")}>De sunat</button>
+        <button className={`ot-sf ${statusFilter === "resolved" ? "ot-sf--active" : ""}`} style={statusFilter === "resolved" ? { background: "#10b981", color: "#fff" } : {}} onClick={() => setStatusFilter("resolved")}>Rezolvate</button>
+        <button className={`ot-sf ${statusFilter === "all" ? "ot-sf--active" : ""}`} style={statusFilter === "all" ? { background: "#374151", color: "#fff" } : {}} onClick={() => setStatusFilter("all")}>Toate</button>
+        <div style={{ marginLeft: "auto" }}>
+          <button className="admin-inline-btn admin-inline-btn--text" onClick={fetchRows} style={{ fontSize: "0.8rem" }}>Reincarca</button>
+        </div>
+      </div>
+
+      {loading ? <p>Se incarca...</p> : filtered.length === 0 ? (
+        <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem", padding: 20, textAlign: "center" }}>Niciun cos abandonat in aceasta categorie.</p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {filtered.map((f) => {
+            const isOpen = expandedId === f.id;
+            return (
+              <div key={f.id} style={{ border: `1px solid ${f.resolved_at ? "var(--color-border)" : "#fde68a"}`, borderRadius: 8, padding: 12, background: f.resolved_at ? "var(--color-surface)" : "#fffbeb" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+                  <strong style={{ fontSize: "0.9rem" }}>#{f.id}</strong>
+                  <span style={{ fontSize: "0.72rem", color: "var(--color-text-muted)" }}>Ultima activitate: {timeAgo(f.last_seen_at)}</span>
+                  {f.resolved_at && <span style={{ fontSize: "0.72rem", color: "#10b981" }}>✓ Rezolvat {formatShortDate(f.resolved_at)}</span>}
+                  <span style={{ marginLeft: "auto", fontSize: "0.8rem", fontWeight: 600 }}>{f.customer_name || "(fara nume)"}</span>
+                </div>
+
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: "0.82rem", color: "var(--color-text)", marginBottom: 6 }}>
+                  {f.customer_phone && <a href={`tel:${f.customer_phone}`} style={{ color: "#2563eb", textDecoration: "none" }}>{f.customer_phone}</a>}
+                  {f.customer_email && <a href={`mailto:${f.customer_email}`} style={{ color: "#2563eb", textDecoration: "none" }}>{f.customer_email}</a>}
+                  {f.product_name && <span style={{ color: "var(--color-text-muted)" }}>{f.product_name}</span>}
+                </div>
+
+                {f.address && (
+                  <div style={{ fontSize: "0.78rem", color: "var(--color-text-muted)", marginBottom: 8 }}>
+                    {f.address}
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {!f.resolved_at && <button className="admin-add-btn" onClick={() => toggleResolved(f.id, false)} style={{ background: "#10b981", padding: "4px 10px", fontSize: "0.75rem" }}>Marcheaza rezolvat</button>}
+                  {f.resolved_at && <button className="admin-inline-btn admin-inline-btn--text" onClick={() => toggleResolved(f.id, true)} style={{ fontSize: "0.75rem" }}>Redeschide</button>}
+                  <button className="admin-inline-btn admin-inline-btn--text" onClick={() => setExpandedId(isOpen ? null : f.id)} style={{ fontSize: "0.75rem" }}>{isOpen ? "Ascunde detalii" : "Detalii"}</button>
+                  {f.url && (
+                    <a className="admin-inline-btn admin-inline-btn--text" href={f.url} target="_blank" rel="noopener" style={{ fontSize: "0.75rem", textDecoration: "none" }}>Deschide pagina</a>
+                  )}
+                  <button className="admin-inline-btn admin-inline-btn--text" onClick={() => deleteRow(f.id)} style={{ color: "#dc2626", fontSize: "0.75rem", marginLeft: "auto" }}>Sterge</button>
+                </div>
+
+                {isOpen && (
+                  <div style={{ marginTop: 10, fontSize: "0.78rem", color: "var(--color-text)", display: "grid", gap: 6 }}>
+                    <div><strong>Creat:</strong> {formatShortDate(f.created_at)}</div>
+                    <div><strong>Sesiune:</strong> <code style={{ fontSize: "0.7rem" }}>{f.session_id}</code></div>
+                    {f.user_agent && <div style={{ color: "var(--color-text-muted)", fontSize: "0.72rem" }}><strong>UA:</strong> {f.user_agent}</div>}
+                    {f.snapshot && (
+                      <details>
+                        <summary style={{ cursor: "pointer", color: "var(--color-text-muted)" }}>Snapshot (JSON)</summary>
+                        <pre style={{ background: "#0f172a", color: "#e2e8f0", padding: 10, borderRadius: 4, fontSize: "0.7rem", overflow: "auto", maxHeight: 300 }}>{JSON.stringify(f.snapshot, null, 2)}</pre>
+                      </details>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

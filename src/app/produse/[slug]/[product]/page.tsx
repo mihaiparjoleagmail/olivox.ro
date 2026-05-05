@@ -1,9 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
+
+interface BeaconPayload {
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string;
+  address: string;
+  product_id?: number;
+  product_name: string;
+  product_slug: string;
+  url: string;
+  snapshot: Record<string, unknown>;
+}
 
 interface Product {
   id: number;
@@ -45,6 +57,12 @@ export default function ProductPage() {
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  const sessionIdRef = useRef<string | null>(null);
+  const beaconDataRef = useRef<{ submitted: boolean; payload: BeaconPayload | null }>({
+    submitted: false,
+    payload: null,
+  });
+
   useEffect(() => {
     fetch(`/api/products?slug=${encodeURIComponent(productSlug)}`)
       .then((r) => r.json())
@@ -62,6 +80,87 @@ export default function ProductPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [productSlug]);
+
+  // Debounced beacon: 1.5s after any field change, send a snapshot to abandoned_carts.
+  useEffect(() => {
+    if (success) return;
+    const ref = beaconDataRef.current;
+    if (!ref.payload) return;
+    const sid = sessionIdRef.current || (typeof window !== "undefined" ? sessionStorage.getItem("cart_session_id") : null);
+    if (!sid) return;
+
+    const timer = setTimeout(() => {
+      const current = beaconDataRef.current;
+      if (current.submitted || !current.payload) return;
+      fetch("/api/orders/log-abandoned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...current.payload, session_id: sid }),
+        keepalive: true,
+      }).catch(() => {});
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [customerName, customerPhone, customerEmail, address, observations, quantity, success]);
+
+  // Stable session ID + unload beacon listener.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let sid = sessionStorage.getItem("cart_session_id");
+    if (!sid) {
+      sid = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      sessionStorage.setItem("cart_session_id", sid);
+    }
+    sessionIdRef.current = sid;
+
+    const fire = () => {
+      const ref = beaconDataRef.current;
+      if (ref.submitted || !ref.payload) return;
+      const payload = { ...ref.payload, session_id: sid };
+      try {
+        const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+        navigator.sendBeacon("/api/orders/log-abandoned", blob);
+      } catch {
+        fetch("/api/orders/log-abandoned", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          keepalive: true,
+        }).catch(() => {});
+      }
+    };
+
+    const onVisibility = () => { if (document.visibilityState === "hidden") fire(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", fire);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", fire);
+    };
+  }, []);
+
+  // Keep beacon payload in sync with latest form state on every render.
+  const hasContactInfo = !!(customerName.trim() || customerPhone.trim() || customerEmail.trim());
+  beaconDataRef.current = {
+    submitted: success,
+    payload: (hasContactInfo && product) ? {
+      customer_name: customerName.trim(),
+      customer_phone: customerPhone.trim(),
+      customer_email: customerEmail.trim(),
+      address: address.trim(),
+      product_id: product.id,
+      product_name: product.name,
+      product_slug: product.slug,
+      url: typeof window !== "undefined" ? window.location.href : "",
+      snapshot: {
+        quantity,
+        observations: observations.trim(),
+        unit_price: Number(product.price) || 0,
+        currency: product.currency || "RON",
+        total: (Number(product.price) || 0) * Number(quantity),
+      },
+    } : null,
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,6 +203,13 @@ export default function ProductPage() {
         items: [{ item_id: product.id, item_name: product.name, quantity, price: product.price }],
       });
       setSuccess(true);
+      if (sessionIdRef.current) {
+        fetch(`/api/orders/log-abandoned?session_id=${encodeURIComponent(sessionIdRef.current)}`, {
+          method: "DELETE",
+          keepalive: true,
+        }).catch(() => {});
+        sessionStorage.removeItem("cart_session_id");
+      }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Eroare");
     } finally {
