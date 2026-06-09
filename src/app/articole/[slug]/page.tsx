@@ -122,23 +122,40 @@ export default async function ArticlePage({ params }: Props) {
       <Header />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <nav className="breadcrumb">
+
+      <nav className="breadcrumb" style={{ padding: "0 16px" }}>
         <a href="/">Acasa</a> / <a href="/articole">Articole</a> / <span>{article.title}</span>
       </nav>
-      <article className="article-detail">
-        <h1 className="article-detail__title">{article.title}</h1>
-        {article.published_at && (
-          <p className="article-detail__date" style={{ color: "var(--color-text-muted)", fontSize: "0.85rem" }}>
-            {formatDate(article.published_at)}
-          </p>
+
+      <header className="article-hero">
+        {article.image_url ? (
+          <>
+            <div className="article-hero__img-wrap">
+              <img src={article.image_url} alt={article.title} className="article-hero__img" />
+            </div>
+            <div className="article-hero__meta">
+              <div className="eyebrow">Articol</div>
+              <h1 className="article-hero__h1">{article.title}</h1>
+              {article.published_at && (
+                <p className="article-hero__date">{formatDate(article.published_at)}</p>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="article-hero__plain">
+            <div className="eyebrow">Articol</div>
+            <h1 className="article-hero__h1">{article.title}</h1>
+            {article.published_at && (
+              <p className="article-hero__date">{formatDate(article.published_at)}</p>
+            )}
+          </div>
         )}
-        {article.image_url && (
-          <img src={article.image_url} alt={article.title} className="article-detail__img" style={{ maxWidth: "100%", height: "auto", margin: "16px 0", borderRadius: 8 }} />
-        )}
-        {article.body && (
-          <div className="article-detail__body" dangerouslySetInnerHTML={{ __html: article.body }} />
-        )}
-      </article>
+      </header>
+
+      {article.body && (
+        <div className="prose" dangerouslySetInnerHTML={{ __html: article.body }} />
+      )}
+
       <Footer />
     </div>
   );

@@ -627,73 +627,59 @@ export default async function GuidePage({ params }: Props) {
       )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
-      <nav className="breadcrumb">
+      <nav className="breadcrumb" style={{ padding: "0 16px" }}>
         <a href="/">Acasa</a> / <a href="/articole">Ghiduri</a> / <span>{g.title}</span>
       </nav>
 
-      <article className="article-detail" style={{ maxWidth: 860, margin: "0 auto", padding: "0 16px" }}>
-        <h1 className="article-detail__title">{g.h1}</h1>
-        <p style={{ fontSize: "1.05rem", lineHeight: 1.65, margin: "16px 0 24px" }}>{g.intro}</p>
-        <div className="article-detail__body" dangerouslySetInnerHTML={{ __html: g.body }} />
+      <header className="guide-hero">
+        <div className="eyebrow">Ghid complet</div>
+        <h1 className="guide-hero__h1">{g.h1}</h1>
+        <p className="guide-hero__intro">{g.intro}</p>
+      </header>
 
-        {g.faq && g.faq.length > 0 && (
-          <section style={{ marginTop: 32 }}>
-            <h2>Intrebari frecvente</h2>
-            {g.faq.map((f, i) => (
-              <div key={i} style={{ margin: "14px 0" }}>
-                <h3 style={{ marginBottom: 4 }}>{f.q}</h3>
-                <p style={{ margin: 0 }}>{f.a}</p>
-              </div>
-            ))}
-          </section>
-        )}
+      <div className="prose" dangerouslySetInnerHTML={{ __html: g.body }} />
 
-        <section style={{ marginTop: 32, padding: 20, background: "#f7f5f0", borderRadius: 12 }}>
-          <h2 style={{ marginTop: 0 }}>Vezi si</h2>
-          <h3>Categorii recomandate</h3>
-          <ul>
-            {g.relatedCategories.map((c) => (
-              <li key={c.href}><a href={c.href}>{c.label}</a></li>
+      {g.faq && g.faq.length > 0 && (
+        <section className="guide-faq">
+          <div className="eyebrow">Intrebari frecvente</div>
+          <h2 className="guide-faq__title">Ai intrebari?</h2>
+          {g.faq.map((f, i) => (
+            <div key={i} className="guide-faq__item">
+              <h3 className="guide-faq__q">{f.q}</h3>
+              <p className="guide-faq__a">{f.a}</p>
+            </div>
+          ))}
+        </section>
+      )}
+
+      <aside className="guide-related">
+        <p className="guide-related__label">Exploreaza mai departe</p>
+        <div className="guide-related__cats">
+          {g.relatedCategories.map((c) => (
+            <a key={c.href} href={c.href} className="guide-related__cat">{c.label}</a>
+          ))}
+        </div>
+        {g.relatedArticles && g.relatedArticles.length > 0 && (
+          <ul className="guide-related__links">
+            {g.relatedArticles.map((a) => (
+              <li key={a.href}><a href={a.href}>{a.label}</a></li>
             ))}
           </ul>
-          {g.relatedArticles && g.relatedArticles.length > 0 && (
-            <>
-              <h3>Articole conexe</h3>
-              <ul>
-                {g.relatedArticles.map((a) => (
-                  <li key={a.href}><a href={a.href}>{a.label}</a></li>
-                ))}
-              </ul>
-            </>
-          )}
-        </section>
+        )}
+      </aside>
 
-        <section style={{ marginTop: 32, textAlign: "center", padding: "28px 16px" }}>
-          <h2>Gata sa explorezi catalogul Snep?</h2>
-          <p>Livrare 3-5 zile lucratoare in toata Romania, factura fiscala si suport in limba romana.</p>
-          <p style={{ marginTop: 16 }}>
-            {g.relatedProducts.map((p, i) => (
-              <a
-                key={p.href}
-                href={p.href}
-                style={{
-                  display: "inline-block",
-                  margin: "6px 8px",
-                  padding: "12px 22px",
-                  background: i === 0 ? "#4a6b3a" : "#fff",
-                  color: i === 0 ? "#fff" : "#4a6b3a",
-                  border: "1px solid #4a6b3a",
-                  borderRadius: 8,
-                  textDecoration: "none",
-                  fontWeight: 600,
-                }}
-              >
-                {p.label}
-              </a>
-            ))}
-          </p>
-        </section>
-      </article>
+      <section className="guide-cta">
+        <h2 className="guide-cta__title">Gata sa explorezi catalogul Snep?</h2>
+        <p className="guide-cta__sub">Livrare 3–5 zile in toata Romania · Factura fiscala · Suport in romana</p>
+        <div className="guide-cta__btns">
+          {g.relatedProducts.map((p, i) => (
+            <a key={p.href} href={p.href} className={i === 0 ? "guide-cta__btn-primary" : "guide-cta__btn-outline"}>
+              {p.label}
+            </a>
+          ))}
+        </div>
+      </section>
+
       <Footer />
     </div>
   );

@@ -17,7 +17,7 @@ export default async function ContactPage() {
   const addressParts = [config.companyAddress, config.companyLocality, config.companyCounty].filter(Boolean);
 
   return (
-    <>
+    <div className="page-wrapper">
       <Header />
       <div className="contact-page">
         <section className="contact-hero">
@@ -118,6 +118,6 @@ export default async function ContactPage() {
       />
 
       <Footer />
-    </>
+    </div>
   );
 }
