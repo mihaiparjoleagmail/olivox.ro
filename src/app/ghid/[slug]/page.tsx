@@ -51,10 +51,10 @@ const GUIDES: Record<string, GuideEntry> = {
 
 <h2>Ce categorii gasesti in catalogul Snep distribuit de Olivox</h2>
 <h3>Vitamine si minerale</h3>
-<p>Formulari cu biodisponibilitate ridicata (ex. forme chelate pentru magneziu si zinc, vitamina D3 in ulei, metilfolat in loc de acid folic). Verifica <a href="/produse/suplimente-alimentare">categoria Suplimente Alimentare</a> pentru gama completa.</p>
+<p>Formulari cu biodisponibilitate ridicata (ex. forme chelate pentru magneziu si zinc, vitamina D3 in ulei, metilfolat in loc de acid folic). Verifica <a href="/produse/suplimente">categoria Suplimente Alimentare</a> pentru gama completa.</p>
 
 <h3>Extracte din plante (fitoterapice)</h3>
-<p>Echinacea, ganoderma, aloe, propolis — folosite traditional in Romania pentru sustinerea imunitatii si a confortului digestiv. Vezi si <a href="/produse/alimente-functionale">alimentele functionale</a> care combina extracte active cu baze alimentare (ceaiuri, shake-uri, cafea).</p>
+<p>Echinacea, ganoderma, aloe, propolis — folosite traditional in Romania pentru sustinerea imunitatii si a confortului digestiv. Vezi si <a href="/produse/alimente">alimentele functionale</a> care combina extracte active cu baze alimentare (ceaiuri, shake-uri, cafea).</p>
 
 <h3>Acizi grasi esentiali (Omega 3)</h3>
 <p>Formule EPA/DHA purificate, fara contaminanti grei. Citeste articolul dedicat: <a href="/articole/omega-3-functie-cardiaca">Cum sprijina omega 3 functia cardiaca</a>.</p>
@@ -113,13 +113,13 @@ const GUIDES: Record<string, GuideEntry> = {
       },
     ],
     relatedCategories: [
-      { label: "Suplimente alimentare", href: "/produse/suplimente-alimentare" },
-      { label: "Alimente functionale", href: "/produse/alimente-functionale" },
+      { label: "Suplimente alimentare", href: "/produse/suplimente" },
+      { label: "Alimente functionale", href: "/produse/alimente" },
       { label: "Cafea functionala", href: "/produse/cafea" },
     ],
     relatedProducts: [
-      { label: "Vezi gama Snep Suplimente", href: "/produse/suplimente-alimentare" },
-      { label: "Alimente functionale Snep", href: "/produse/alimente-functionale" },
+      { label: "Vezi gama Snep Suplimente", href: "/produse/suplimente" },
+      { label: "Alimente functionale Snep", href: "/produse/alimente" },
     ],
     relatedArticles: [
       { label: "Cum sprijina omega 3 functia cardiaca", href: "/articole/omega-3-functie-cardiaca" },
@@ -164,7 +164,7 @@ const GUIDES: Record<string, GuideEntry> = {
 <p>5-8 picaturi amestecate intr-o lingura de sare Epsom sau ulei, apoi in apa calda. Nu pune uleiul direct in apa — pluteste la suprafata si irita.</p>
 
 <h3>5. Produse de curatenie naturale</h3>
-<p>Citric (lamaie, portocala) si tea tree adauga putere antimicrobiana spray-urilor DIY pe baza de otet si bicarbonat. Combina frumos cu gama <a href="/produse/parfumuri-de-camera">Parfumuri de camera Snep</a> pentru o casa cu aer curat si placut.</p>
+<p>Citric (lamaie, portocala) si tea tree adauga putere antimicrobiana spray-urilor DIY pe baza de otet si bicarbonat. Combina frumos cu gama <a href="/produse/parfum-de-camera">Parfumuri de camera Snep</a> pentru o casa cu aer curat si placut.</p>
 
 <h2>Top uleiuri esentiale pentru incepatori</h2>
 
@@ -221,12 +221,12 @@ const GUIDES: Record<string, GuideEntry> = {
     ],
     relatedCategories: [
       { label: "Uleiuri esentiale", href: "/produse/uleiuri-esentiale" },
-      { label: "Parfumuri de camera", href: "/produse/parfumuri-de-camera" },
-      { label: "Cosmetice naturale", href: "/produse/beauty-snep" },
+      { label: "Parfumuri de camera", href: "/produse/parfum-de-camera" },
+      { label: "Cosmetice naturale", href: "/produse/corp" },
     ],
     relatedProducts: [
       { label: "Vezi toate uleiurile esentiale Snep", href: "/produse/uleiuri-esentiale" },
-      { label: "Difuzoare si parfumuri de camera", href: "/produse/parfumuri-de-camera" },
+      { label: "Difuzoare si parfumuri de camera", href: "/produse/parfum-de-camera" },
     ],
     relatedArticles: [
       { label: "Beneficiile uleiului esential de lavanda", href: "/articole/ulei-esential-lavanda-beneficii" },
@@ -312,7 +312,7 @@ const GUIDES: Record<string, GuideEntry> = {
   <li>NU inlocuieste un tratament prescris.</li>
 </ul>
 
-<p>Citeste si <a href="/ghid/suplimente-alimentare-naturale">Ghidul suplimentelor alimentare naturale</a> pentru contextul mai larg si <a href="/produse/suplimente-alimentare">catalogul complet de suplimente Snep</a>.</p>
+<p>Citeste si <a href="/ghid/suplimente-alimentare-naturale">Ghidul suplimentelor alimentare naturale</a> pentru contextul mai larg si <a href="/produse/suplimente">catalogul complet de suplimente Snep</a>.</p>
 `,
     faq: [
       {
@@ -329,11 +329,11 @@ const GUIDES: Record<string, GuideEntry> = {
       },
     ],
     relatedCategories: [
-      { label: "Suplimente alimentare", href: "/produse/suplimente-alimentare" },
-      { label: "Alimente functionale", href: "/produse/alimente-functionale" },
+      { label: "Suplimente alimentare", href: "/produse/suplimente" },
+      { label: "Alimente functionale", href: "/produse/alimente" },
     ],
     relatedProducts: [
-      { label: "Catalog suplimente Snep", href: "/produse/suplimente-alimentare" },
+      { label: "Catalog suplimente Snep", href: "/produse/suplimente" },
     ],
     relatedArticles: [
       { label: "Beneficiile uleiului esential de lavanda", href: "/articole/ulei-esential-lavanda-beneficii" },
@@ -395,7 +395,7 @@ const GUIDES: Record<string, GuideEntry> = {
 </ul>
 
 <h2>Cafeaua cu Ganoderma din catalogul Snep</h2>
-<p>Catalogul Snep include cafele functionale cu extract standardizat de Ganoderma Lucidum, ambalate in plicuri monodoza pentru o preparare rapida si o dozare constanta. Vezi <a href="/produse/cafea">cafeaua functionala Snep</a> in pagina dedicata si integreaza-o in rutina ta alaturi de <a href="/produse/alimente-functionale">restul alimentelor functionale</a>.</p>
+<p>Catalogul Snep include cafele functionale cu extract standardizat de Ganoderma Lucidum, ambalate in plicuri monodoza pentru o preparare rapida si o dozare constanta. Vezi <a href="/produse/cafea">cafeaua functionala Snep</a> in pagina dedicata si integreaza-o in rutina ta alaturi de <a href="/produse/alimente">restul alimentelor functionale</a>.</p>
 
 <h2>Intrebari pe care si le pun consumatorii</h2>
 <p>Gustul nu este foarte diferit de cafeaua obisnuita — ciuperca adauga o nota usor pamantie, amaruie, care se estompeaza cu lapte sau scortisoara. Cantitatea de cafeina este mai mica decat intr-un espresso dublu, comparabila cu o cafea filtru medie.</p>
@@ -429,8 +429,8 @@ const GUIDES: Record<string, GuideEntry> = {
     ],
     relatedCategories: [
       { label: "Cafea functionala", href: "/produse/cafea" },
-      { label: "Alimente functionale", href: "/produse/alimente-functionale" },
-      { label: "Suplimente alimentare", href: "/produse/suplimente-alimentare" },
+      { label: "Alimente functionale", href: "/produse/alimente" },
+      { label: "Suplimente alimentare", href: "/produse/suplimente" },
     ],
     relatedProducts: [
       { label: "Vezi cafeaua cu Ganoderma Snep", href: "/produse/cafea" },
