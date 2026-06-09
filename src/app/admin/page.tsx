@@ -19,39 +19,31 @@ interface CustomFieldValue {
 
 interface Order {
   id: number;
-  brand_name: string;
-  model_name: string;
-  custom_name: string;
+  product_id?: number | null;
   product_name?: string;
-  text_color: string;
-  image_url: string;
-  original_image_url: string;
-  final_image_url: string;
-  print_image_url?: string;
-  design_image_url?: string;
+  product_slug?: string;
+  quantity?: number;
   address: string;
   customer_name: string;
   customer_phone: string;
   customer_email: string;
   observations: string;
   status: string;
-  awb_number: string;
-  awb_status: string;
+  awb_number?: string;
+  awb_status?: string;
   fan_awb?: string;
   fan_status?: string;
   sd_awb?: string;
   sd_status?: string;
   eb_awb?: string;
   eb_status?: string;
-  shipping_method: string;
-  order_source: string;
+  shipping_method?: string;
+  order_source?: string;
   ramburs?: number;
   fgo_serie?: string;
   fgo_numar?: string;
   fgo_link?: string;
   custom_field_values?: Record<string, CustomFieldValue>;
-  cross_sell_items?: Array<{ product_id: number; name: string; price: number; image_url?: string }>;
-  product_category_slugs?: string[];
   order_value?: number;
   locker_id?: number | null;
   created_at: string;
@@ -74,7 +66,6 @@ interface Product {
   slug: string;
   r2_image_url: string;
   image_url: string;
-  print_image_url?: string;
   price: number;
   category_slugs: string[];
   short_description: string;
@@ -99,8 +90,6 @@ interface AbandonedCart {
   product_id: number | null;
   product_name: string | null;
   product_slug: string | null;
-  brand_name: string | null;
-  model_name: string | null;
   snapshot: Record<string, unknown> | null;
   user_agent: string | null;
   url: string | null;
@@ -325,7 +314,7 @@ function OrdersPanel({ auth, onCountUpdate, onOrdersLoaded, initialOrderId }: { 
     if (filterStatus && o.status !== filterStatus) return false;
     if (!search) return true;
     const q = search.toLowerCase();
-    const all = `${o.id} ${o.customer_name} ${o.customer_phone} ${o.customer_email} ${o.brand_name} ${o.model_name} ${o.address} ${o.awb_number} ${o.observations}`.toLowerCase();
+    const all = `${o.id} ${o.customer_name} ${o.customer_phone} ${o.customer_email} ${o.product_name || ""} ${o.address} ${o.awb_number || ""} ${o.observations}`.toLowerCase();
     return all.includes(q);
   });
 
@@ -376,7 +365,7 @@ function OrdersPanel({ auth, onCountUpdate, onOrdersLoaded, initialOrderId }: { 
                   <div className="ot-history-list">
                     {history.map((h) => (
                       <button key={h.id} className="ot-history-item" style={h.status === "finalizata" || h.status === "livrat" ? { color: "#10b981" } : h.status === "retur" ? { color: "#dc2626" } : h.status === "anulata" || h.status === "anulat" ? { textDecoration: "line-through" } : {}} onClick={() => window.open(`/admin?order=${h.id}`, "_blank")}>
-                        #{h.id} — {new Date(h.created_at).toLocaleDateString("ro-RO")} — {h.brand_name} {h.model_name} ({h.status})
+                        #{h.id} — {new Date(h.created_at).toLocaleDateString("ro-RO")} — {h.product_name || "—"} ({h.status})
                       </button>
                     ))}
                   </div>
@@ -389,8 +378,7 @@ function OrdersPanel({ auth, onCountUpdate, onOrdersLoaded, initialOrderId }: { 
               </div>
             </div>
             <div className="admin-order__images">
-              <OrderImages order={order} auth={auth} onUpdate={fetchOrders} onLightbox={(imgs, names, idx, url) => { setLightboxImages(imgs); setLightboxNames(names); setLightboxIdx(idx); setLightboxImg(url); }} />
-              <div style={{ borderTop: "1px solid var(--color-border)", marginTop: 16, paddingTop: 16 }}>
+              <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <h3 style={{ margin: 0 }}>Livrare</h3>
@@ -418,7 +406,7 @@ function OrdersPanel({ auth, onCountUpdate, onOrdersLoaded, initialOrderId }: { 
                 <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 6 }}>
                   <button onClick={() => {
                     const sn = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[șȘ]/g, "s").replace(/[țȚ]/g, "t").replace(/[ăĂ]/g, "a").replace(/[âÂ]/g, "a").replace(/[îÎ]/g, "i").replace(/[^a-zA-Z0-9_\-]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
-                    const name = `${order.id}_${sn(order.customer_name)}_${order.product_name ? sn(order.product_name) : ""}_${lightboxNames[lightboxIdx] || "imagine"}${order.brand_name ? `_${sn(order.brand_name)}` : ""}${order.model_name ? `_${sn(order.model_name)}` : ""}.jpg`.replace(/_+/g, "_").replace(/_\./g, ".");
+                    const name = `${order.id}_${sn(order.customer_name)}_${order.product_name ? sn(order.product_name) : ""}_${lightboxNames[lightboxIdx] || "imagine"}.jpg`.replace(/_+/g, "_").replace(/_\./g, ".");
                     fetch(`/api/proxy-image?url=${encodeURIComponent(lightboxImg)}`).then(r => r.blob()).then(blob => {
                       const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
                     });
@@ -565,7 +553,7 @@ function OrdersPanel({ auth, onCountUpdate, onOrdersLoaded, initialOrderId }: { 
                             <div className="ot-history-list">
                               {history.map((h) => (
                                 <button key={h.id} className="ot-history-item" style={h.status === "finalizata" || h.status === "livrat" ? { color: "#10b981" } : h.status === "retur" ? { color: "#dc2626" } : h.status === "anulata" || h.status === "anulat" ? { textDecoration: "line-through" } : {}} onClick={() => setExpandedId(h.id)}>
-                                  #{h.id} — {new Date(h.created_at).toLocaleDateString("ro-RO")} — {h.brand_name} {h.model_name} ({h.status})
+                                  #{h.id} — {new Date(h.created_at).toLocaleDateString("ro-RO")} — {h.product_name || "—"} ({h.status})
                                 </button>
                               ))}
                             </div>
@@ -578,8 +566,7 @@ function OrdersPanel({ auth, onCountUpdate, onOrdersLoaded, initialOrderId }: { 
                         </div>
                       </div>
                       <div className="admin-order__images">
-                        <OrderImages order={order} auth={auth} onUpdate={fetchOrders} onLightbox={(imgs, names, idx, url) => { setLightboxImages(imgs); setLightboxNames(names); setLightboxIdx(idx); setLightboxImg(url); }} />
-                        <div style={{ borderTop: "1px solid var(--color-border)", marginTop: 16, paddingTop: 16 }}>
+                        <div>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 12 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <h3 style={{ margin: 0 }}>Livrare</h3>
@@ -624,7 +611,7 @@ function OrdersPanel({ auth, onCountUpdate, onOrdersLoaded, initialOrderId }: { 
                     <button onClick={() => {
                       const lbOrder = orders.find(o => o.id === expandedId);
                       const sn = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[șȘ]/g, "s").replace(/[țȚ]/g, "t").replace(/[ăĂ]/g, "a").replace(/[âÂ]/g, "a").replace(/[îÎ]/g, "i").replace(/[^a-zA-Z0-9_\-]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
-                      const name = lbOrder ? `${lbOrder.id}_${sn(lbOrder.customer_name)}_${lbOrder.product_name ? sn(lbOrder.product_name) : ""}_${lightboxNames[lightboxIdx] || "imagine"}${lbOrder.brand_name ? `_${sn(lbOrder.brand_name)}` : ""}${lbOrder.model_name ? `_${sn(lbOrder.model_name)}` : ""}.jpg`.replace(/_+/g, "_").replace(/_\./g, ".") : `${lightboxNames[lightboxIdx] || "imagine"}.jpg`;
+                      const name = lbOrder ? `${lbOrder.id}_${sn(lbOrder.customer_name)}_${lbOrder.product_name ? sn(lbOrder.product_name) : ""}_${lightboxNames[lightboxIdx] || "imagine"}.jpg`.replace(/_+/g, "_").replace(/_\./g, ".") : `${lightboxNames[lightboxIdx] || "imagine"}.jpg`;
                       fetch(`/api/proxy-image?url=${encodeURIComponent(lightboxImg)}`).then(r => r.blob()).then(blob => {
                         const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
                       });
@@ -959,14 +946,7 @@ function ProductsPanel({ auth }: { auth: string }) {
                 {filtered.map((p) => (
                   <tr key={p.id} className="admin-table__clickrow" onClick={() => { sessionStorage.setItem("admin_products_page", String(page)); sessionStorage.setItem("admin_products_filter", filterCat); sessionStorage.setItem("admin_products_search", search); window.location.href = `/admin/produse/${p.id}`; }}>
                     <td>
-                      <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
-                        <img src={p.r2_image_url || p.image_url} alt="" className="admin-table__thumb" />
-                        {p.print_image_url ? (
-                          <img src={p.print_image_url} alt="PRINT" className="admin-table__thumb" style={{ borderRadius: 2, opacity: 0.85, maxHeight: 48, width: "auto" }} title="Imagine PRINT" />
-                        ) : (
-                          <span style={{ fontSize: "0.55rem", color: "#e55", fontWeight: 600 }} title="Fara imagine PRINT">!</span>
-                        )}
-                      </div>
+                      <img src={p.r2_image_url || p.image_url} alt="" className="admin-table__thumb" />
                     </td>
                     <td>
                       {editingId === p.id ? (
@@ -1046,19 +1026,12 @@ function SettingsPanel({ auth }: { auth: string }) {
 Sunt de la {{site_name}}.
 
 Mulțumim pentru comanda dvs cu nr #{{id_comanda}} în sumă de {{valoare}} lei.
-Hai să verificăm împreună detaliile ei:
 
 Produs: {{produs}}
-Text pe husă: {{text_husa}}
-
-Te rog verifică modelul exact din SETĂRI → DESPRE TELEFON → MODEL.
-Atenție la diferențe gen 4G / 5G / Plus / Edge etc.
-
 Livrare: {{metoda_livrare}}
 Adresa: {{adresa}}
 
-Confirmă textul și adresa de livrare.
-După ce ne confirmați grafica și datele de mai sus, vom prelucra comanda.`;
+Confirmați adresa de livrare și vă procesăm comanda rapid.`;
   // Legacy single-template field (used as fallback if no templates array)
   const [waTemplate, setWaTemplate] = useState(DEFAULT_WA_TEMPLATE);
   // New: array of templates with category assignment
@@ -2120,35 +2093,6 @@ function HomepagePanel({ auth }: { auth: string }) {
 }
 
 
-// ===== ORDER IMAGES =====
-function OrderImages({ order, onLightbox }: { order: Order; auth: string; onUpdate: () => void; onLightbox: (imgs: string[], names: string[], idx: number, url: string) => void }) {
-  const hasDesign = !!order.design_image_url;
-  const imgEntries: [string, string | undefined][] = hasDesign
-    ? [["Originala", order.original_image_url], ["Design 1080", order.design_image_url], ["Finala", order.final_image_url]]
-    : [["Originala", order.original_image_url], ["Cropata", order.image_url], ["Finala", order.final_image_url]];
-  const allImgs = imgEntries.map(([, url]) => url);
-  const labels = imgEntries.map(([label]) => label);
-  const imgs = allImgs.filter(Boolean) as string[];
-
-  return (
-    <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h3>Imagini</h3>
-      </div>
-      <div className="admin-images-grid">
-        {allImgs.map((url, i) => url ? (
-          <div key={i} className="admin-image-card">
-            <span>{labels[i]}</span>
-            <img src={url} alt={labels[i]} onClick={() => {
-              const imgLabels = imgEntries.filter(([, u]) => u).map(([l]) => l);
-              onLightbox(imgs, imgLabels, imgs.indexOf(url), url);
-            }} style={{ cursor: "pointer" }} />
-          </div>
-        ) : null)}
-      </div>
-    </>
-  );
-}
 
 // ===== AWB SECTION =====
 // ===== RAMBURS FIELD =====
@@ -2277,37 +2221,18 @@ function AwbSection({ order, auth, onUpdate }: { order: Order; auth: string; onU
 
   // Pick the right template based on order's product category
   const pickWaTemplate = () => {
-    const hasCrossSell = (order.cross_sell_items || []).length > 0;
-    const orderCats = order.product_category_slugs || [];
-
-    // If has cross-sell or no category info, use general
-    if (hasCrossSell || orderCats.length === 0) {
-      return waGeneralTemplate || waTemplate || "";
-    }
-
-    // Find a template matching any of the order's categories
-    for (const tpl of waTemplates) {
-      if (tpl.category_slugs.some((s) => orderCats.includes(s))) {
-        return tpl.content;
-      }
-    }
-
-    // Fallback to general
     return waGeneralTemplate || waTemplate || "";
   };
 
   const buildWhatsAppMsg = () => {
     const shippingLabel = order.shipping_method === "easybox" ? "Easybox (Locker Sameday)" : order.shipping_method === "sameday" ? "Sameday (la adresa)" : "FanCourier (la adresa)";
-    const prodName = order.product_name || `${order.brand_name} ${order.model_name}`;
+    const prodName = order.product_name || "—";
     const tpl = pickWaTemplate() || `Bună {{nume_client}}, mulțumim pentru comanda #{{id_comanda}} în sumă de {{valoare}} lei. Produs: {{produs}}. Livrare: {{metoda_livrare}}, Adresa: {{adresa}}. Confirmă detaliile.`;
     return tpl
       .replace(/\{\{nume_client\}\}/g, order.customer_name || "")
       .replace(/\{\{id_comanda\}\}/g, String(order.id))
       .replace(/\{\{valoare\}\}/g, String(order.order_value || config.productPrice || 0))
       .replace(/\{\{produs\}\}/g, prodName)
-      .replace(/\{\{brand\}\}/g, order.brand_name || "-")
-      .replace(/\{\{model\}\}/g, order.model_name || "-")
-      .replace(/\{\{text_husa\}\}/g, order.custom_name || "-")
       .replace(/\{\{metoda_livrare\}\}/g, shippingLabel)
       .replace(/\{\{adresa\}\}/g, order.address || "-")
       .replace(/\{\{telefon\}\}/g, order.customer_phone || "")
@@ -2558,7 +2483,7 @@ function DashboardPanel({ orders, onNavigate }: { orders: Order[]; onNavigate: (
   // Top 3 products this month
   const productCounts: Record<string, number> = {};
   activeOrders.forEach((o) => {
-    const key = `${o.brand_name} ${o.model_name}`;
+    const key = o.product_name || "Produs necunoscut";
     productCounts[key] = (productCounts[key] || 0) + 1;
   });
   const topProducts = Object.entries(productCounts)
@@ -2657,7 +2582,7 @@ function StatisticsPanel({ orders }: { orders: Order[] }) {
   // Top products
   const productCounts: Record<string, number> = {};
   active.forEach((o) => {
-    const key = o.product_name || `${o.brand_name} ${o.model_name}`;
+    const key = o.product_name || "Produs necunoscut";
     productCounts[key] = (productCounts[key] || 0) + 1;
   });
   const topProducts = Object.entries(productCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
@@ -2746,10 +2671,6 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
     customer_name: order.customer_name,
     customer_phone: order.customer_phone,
     customer_email: order.customer_email || "",
-    brand_name: order.brand_name,
-    model_name: order.model_name,
-    custom_name: order.custom_name || "",
-    text_color: order.text_color || "",
     observations: order.observations || "",
     custom_field_values: order.custom_field_values || {},
     order_value: order.order_value || 0,
@@ -2854,15 +2775,14 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
     await fetch("/api/admin/orders", {
       method: "PATCH",
       headers: { Authorization: auth, "Content-Type": "application/json" },
-      body: JSON.stringify({ id: order.id, ...rest, address, custom_field_values, order_value: Number(order_value) || 0, locker_id: locker_id || null }),
+      body: JSON.stringify({ id: order.id, ...rest, address, custom_field_values, order_value: Number(order_value) || 0, locker_id: locker_id ? String(locker_id) : null }),
     });
     setSaving(false);
     setEditing(false);
     onUpdate();
   };
 
-  // Extract product name from observations or brand+model
-  const productName = order.product_name || `${order.brand_name || ""} ${order.model_name || ""}`.trim();
+  const productName = order.product_name || "";
 
   if (!editing) {
     return (
@@ -2878,7 +2798,6 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
           <button className="admin-action-btn" onClick={() => setEditing(true)} title="Editeaza">✎</button>
         </div>
         <table><tbody>
-          {order.custom_name &&<tr><td>Text</td><td style={{ fontWeight: 700 }}><span style={{ display: "inline-block", width: 12, height: 12, borderRadius: "50%", background: order.text_color || "#000", border: "1px solid #ddd", verticalAlign: "middle", marginRight: 6 }}></span><span style={{ color: order.text_color || "#000", background: (order.text_color || "").toUpperCase() === "#FFFFFF" || (order.text_color || "").toUpperCase() === "#FFF" ? "#555" : "transparent", padding: (order.text_color || "").toUpperCase() === "#FFFFFF" || (order.text_color || "").toUpperCase() === "#FFF" ? "2px 8px" : 0, borderRadius: 4 }}>{order.custom_name}</span></td></tr>}
           <tr><td>Nume</td><td>{order.customer_name}</td></tr>
           <tr><td>Telefon</td><td><a href={`tel:${order.customer_phone}`}>{order.customer_phone}</a></td></tr>
           {order.customer_email && <tr><td>Email</td><td>{order.customer_email}</td></tr>}
@@ -2893,17 +2812,6 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
               {cf.price_impact ? <span style={{ color: "var(--color-accent)", marginLeft: 4, fontSize: "0.75rem" }}>({cf.price_impact > 0 ? "+" : ""}{cf.price_impact} RON)</span> : null}
             </td></tr>
           ))}
-          {order.cross_sell_items && order.cross_sell_items.length > 0 && (
-            <tr><td style={{ verticalAlign: "top" }}>Cross-sell</td><td>
-              {order.cross_sell_items.map((cs, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                  {cs.image_url && <img src={cs.image_url} alt="" style={{ width: 24, height: 24, objectFit: "cover", borderRadius: 3 }} />}
-                  <span>{cs.name}</span>
-                  <span style={{ color: "var(--color-accent)", fontWeight: 700, fontSize: "0.75rem" }}>+{cs.price} RON</span>
-                </div>
-              ))}
-            </td></tr>
-          )}
         </tbody></table>
       </>
     );
@@ -2995,18 +2903,6 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
         <div className="order-edit-row">
           <label>Valoare (RON)</label>
           <input type="number" value={f.order_value || 0} onChange={(e) => setF({ ...f, order_value: Number(e.target.value) })} style={{ width: 100 }} />
-        </div>
-        <div className="order-edit-row">
-          <label>Text pe husa</label>
-          <input value={f.custom_name} onChange={(e) => setF({ ...f, custom_name: e.target.value })} />
-        </div>
-        <div className="order-edit-row">
-          <label>Culoare text</label>
-          <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-            {[{ n: "Alb", v: "#FFFFFF" }, { n: "Negru", v: "#000000" }, { n: "Rosu", v: "#E94560" }, { n: "Auriu", v: "#D4A843" }, { n: "Albastru", v: "#3B82F6" }].map((c) => (
-              <button key={c.v} type="button" onClick={() => setF({ ...f, text_color: c.v })} title={c.n} style={{ width: 24, height: 24, borderRadius: "50%", background: c.v, border: f.text_color === c.v ? "2px solid var(--color-primary)" : "1px solid #ddd", cursor: "pointer", padding: 0, boxShadow: f.text_color === c.v ? "0 0 0 2px var(--color-primary)" : "none" }} />
-            ))}
-          </div>
         </div>
         <div className="order-edit-row">
           <label>Observatii</label>
