@@ -50,7 +50,12 @@ export default function ProductPage() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
-  const [address, setAddress] = useState("");
+  const [strada, setStrada] = useState("");
+  const [judetId, setJudetId] = useState("");
+  const [judetName, setJudetName] = useState("");
+  const [localitate, setLocalitate] = useState("");
+  const [judeteList, setJudeteList] = useState<{id:number;name:string}[]>([]);
+  const [localitatiList, setLocalitatiList] = useState<string[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [observations, setObservations] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -101,7 +106,7 @@ export default function ProductPage() {
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [customerName, customerPhone, customerEmail, address, observations, quantity, success]);
+  }, [customerName, customerPhone, customerEmail, strada, localitate, judetName, observations, quantity, success]);
 
   // Stable session ID + unload beacon listener.
   useEffect(() => {
@@ -139,7 +144,21 @@ export default function ProductPage() {
     };
   }, []);
 
+  useEffect(() => {
+    fetch("/api/judete").then((r) => r.json()).then((data) => {
+      if (Array.isArray(data)) setJudeteList(data);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!judetId) { setLocalitatiList([]); setLocalitate(""); return; }
+    fetch(`/api/localitati?judetId=${judetId}`).then((r) => r.json()).then((data) => {
+      if (Array.isArray(data)) setLocalitatiList(data);
+    }).catch(() => {});
+  }, [judetId]);
+
   // Keep beacon payload in sync with latest form state on every render.
+  const combinedAddress = [strada.trim(), localitate, judetName].filter(Boolean).join(", ");
   const hasContactInfo = !!(customerName.trim() || customerPhone.trim() || customerEmail.trim());
   beaconDataRef.current = {
     submitted: success,
@@ -147,7 +166,7 @@ export default function ProductPage() {
       customer_name: customerName.trim(),
       customer_phone: customerPhone.trim(),
       customer_email: customerEmail.trim(),
-      address: address.trim(),
+      address: combinedAddress,
       product_id: product.id,
       product_name: product.name,
       product_slug: product.slug,
@@ -179,7 +198,7 @@ export default function ProductPage() {
           customer_name: customerName,
           customer_phone: customerPhone,
           customer_email: customerEmail,
-          address,
+          address: combinedAddress,
           observations,
           order_value: Number(product.price) * Number(quantity),
         }),
@@ -297,9 +316,29 @@ export default function ProductPage() {
               <label>Email</label>
               <input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
             </div>
+            <div className="pd-form__row">
+              <label>Județ *</label>
+              <select required value={judetId} onChange={(e) => {
+                const id = e.target.value;
+                setJudetId(id);
+                const j = judeteList.find((x) => String(x.id) === id);
+                setJudetName(j?.name || "");
+                setLocalitate("");
+              }}>
+                <option value="">Selectează județ</option>
+                {judeteList.map((j) => <option key={j.id} value={j.id}>{j.name}</option>)}
+              </select>
+            </div>
+            <div className="pd-form__row">
+              <label>Localitate *</label>
+              <select required value={localitate} onChange={(e) => setLocalitate(e.target.value)} disabled={!judetId}>
+                <option value="">{judetId ? "Selectează localitate" : "Alege județul mai întâi"}</option>
+                {localitatiList.map((l) => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
             <div className="pd-form__row pd-form__row--full">
-              <label>Adresa livrare *</label>
-              <textarea required rows={2} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Judet, localitate, strada, numar" />
+              <label>Stradă, număr *</label>
+              <input type="text" required value={strada} onChange={(e) => setStrada(e.target.value)} placeholder="Strada, număr, bloc, apartament" />
             </div>
             <div className="pd-form__row pd-form__row--full">
               <label>Observatii</label>

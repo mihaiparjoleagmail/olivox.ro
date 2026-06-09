@@ -2801,6 +2801,8 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
           <tr><td>Nume</td><td>{order.customer_name}</td></tr>
           <tr><td>Telefon</td><td><a href={`tel:${order.customer_phone}`}>{order.customer_phone}</a></td></tr>
           {order.customer_email && <tr><td>Email</td><td>{order.customer_email}</td></tr>}
+          {judetName && <tr><td>Județ</td><td>{judetName}</td></tr>}
+          {localitateVal && <tr><td>Localitate</td><td>{localitateVal}</td></tr>}
           <tr><td>Adresa</td><td>{order.address}</td></tr>
           <tr><td>Valoare</td><td><strong style={{ color: "var(--color-accent)" }}>{order.order_value || 0} RON</strong></td></tr>
           {order.observations && <tr><td>Obs</td><td>{order.observations}</td></tr>}

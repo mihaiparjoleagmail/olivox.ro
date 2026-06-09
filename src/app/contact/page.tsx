@@ -19,7 +19,7 @@ export default async function ContactPage() {
   return (
     <>
       <Header />
-      <main className="contact-page">
+      <div className="contact-page">
         <section className="contact-hero">
           <div className="eyebrow">Suntem aici pentru tine</div>
           <h1 className="contact-hero__title">Contact</h1>
@@ -91,7 +91,7 @@ export default async function ContactPage() {
             <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer">ec.europa.eu/consumers/odr</a>.
           </p>
         </section>
-      </main>
+      </div>
 
       <script
         type="application/ld+json"
