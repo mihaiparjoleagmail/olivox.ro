@@ -17,10 +17,9 @@ interface OrderEmailData {
 }
 
 export async function sendOrderEmail(data: OrderEmailData) {
-  if (!RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY nu este configurat");
-  }
+  if (!RESEND_API_KEY) return;
   const config = await getSiteConfig();
+  const adminEmail = config.emailAdmin || "atelieruldeprint@gmail.com";
 
   const html = `
 <!DOCTYPE html>
@@ -65,8 +64,8 @@ export async function sendOrderEmail(data: OrderEmailData) {
 </html>`;
 
   const { error } = await resend.emails.send({
-    from: config.emailFrom,
-    to: config.emailAdmin,
+    from: config.emailFrom || "Olivox <no-reply@ghidulfunerar.ro>",
+    to: adminEmail,
     subject: `Comanda #${data.order_id} — ${data.product_name || "produs Snep"}`,
     html,
   });

@@ -46,8 +46,8 @@ export const DEFAULT_CONFIG: SiteConfig = {
 
   phone: "",
   emailOrders: "comenzi@olivox.ro",
-  emailFrom: "Olivox <no-reply@olivox.ro>",
-  emailAdmin: "",
+  emailFrom: "Olivox <no-reply@ghidulfunerar.ro>",
+  emailAdmin: "atelieruldeprint@gmail.com",
 
   iban: "",
   banca: "",
