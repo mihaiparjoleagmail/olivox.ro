@@ -62,6 +62,21 @@ async function getProducts(categorySlug: string, page: number) {
   };
 }
 
+const CATEGORY_GUIDES: Record<string, { title: string; href: string }> = {
+  "uleiuri-esentiale": {
+    title: "Uleiuri esentiale: utilizari, beneficii si ghid complet",
+    href: "/ghid/uleiuri-esentiale-utilizari",
+  },
+  "suplimente": {
+    title: "Ghidul suplimentelor alimentare naturale",
+    href: "/ghid/suplimente-alimentare-naturale",
+  },
+  "cafea": {
+    title: "Cafea functionala cu Ganoderma: beneficii si utilizari",
+    href: "/ghid/cafea-functionala-ganoderma",
+  },
+};
+
 export default async function CategoryPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const sp = await searchParams;
@@ -129,6 +144,20 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             <span className="pagination__btn pagination__btn--disabled">Inainte &rarr;</span>
           )}
         </div>
+      )}
+
+      {CATEGORY_GUIDES[slug] && (
+        <section style={{ margin: "32px auto", maxWidth: 860, padding: "0 16px" }}>
+          <div style={{ background: "#f7f5f0", borderRadius: 12, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#7c6f5a", marginBottom: 4 }}>Ghid complet</div>
+              <p style={{ margin: 0, fontWeight: 600, fontSize: "1rem" }}>{CATEGORY_GUIDES[slug].title}</p>
+            </div>
+            <a href={CATEGORY_GUIDES[slug].href} style={{ display: "inline-block", padding: "10px 20px", background: "#4a6b3a", color: "#fff", borderRadius: 8, textDecoration: "none", fontWeight: 600, fontSize: "0.9rem", whiteSpace: "nowrap" }}>
+              Citeste ghidul →
+            </a>
+          </div>
+        </section>
       )}
 
       {descriptionHtml && (
