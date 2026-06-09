@@ -1,24 +1,27 @@
 @echo off
-cd /d E:\husepersonalizate.ro
+setlocal
+cd /d E:\olivox
 
 echo.
 echo  ========================================
-echo   husepersonalizate.ro - Push to GitHub
+echo   olivox.ro - Push to GitHub
 echo  ========================================
 echo.
+
+set "MSG=%*"
+if "%MSG%"=="" set "MSG=Update"
 
 echo  [*] Adaugare fisiere...
 git add -A
 
-echo  [*] Commit...
-git commit -m "Update"
+echo  [*] Commit: %MSG%
+git commit -m "%MSG%"
 
-echo  [*] Push la GitHub...
+echo  [*] Push la GitHub (mihai2025/olivox)...
 git push origin main
 
 echo.
 echo  ========================================
-echo   GATA! Fisierele au fost urcate.
-echo   Vercel va face deploy automat.
+echo   GATA! Vercel va face deploy automat.
 echo  ========================================
 pause
