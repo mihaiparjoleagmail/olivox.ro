@@ -75,6 +75,14 @@ const CATEGORY_GUIDES: Record<string, { title: string; href: string }> = {
     title: "Cafea functionala cu Ganoderma: beneficii si utilizari",
     href: "/ghid/cafea-functionala-ganoderma",
   },
+  "corp": {
+    title: "Cosmetice naturale: ghid complet pentru ingrijire",
+    href: "/ghid/cosmetice-naturale",
+  },
+  "fata": {
+    title: "Cosmetice naturale: ghid complet pentru ingrijire",
+    href: "/ghid/cosmetice-naturale",
+  },
 };
 
 export default async function CategoryPage({ params, searchParams }: Props) {

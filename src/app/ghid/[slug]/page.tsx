@@ -440,6 +440,113 @@ const GUIDES: Record<string, GuideEntry> = {
       { label: "Programe detox: cand ai nevoie", href: "/articole/programe-detox-cand-ai-nevoie" },
     ],
   },
+
+  "cosmetice-naturale": {
+    slug: "cosmetice-naturale",
+    title: "Cosmetice naturale: ghid complet pentru ingrijire",
+    metaTitle: "Cosmetice naturale: ghid complet pentru ingrijire | Olivox",
+    metaDescription:
+      "Ghid complet cosmetice naturale: ce inseamna cu adevarat 'natural', cum citesti eticheta INCI, ce ingrediente eviti si ce produse Snep poti integra in rutina ta.",
+    keywords:
+      "cosmetice naturale, cosmetice fara parabeni, ingrediente cosmetice naturale, rutina ingrijire naturala, cosmetice Snep, eticheta INCI",
+    h1: "Cosmetice naturale: ghid complet pentru ingrijire",
+    intro:
+      "Termenul 'natural' apare pe tot mai multe ambalaje, dar nu este reglementat prin lege. Asta inseamna ca orice brand il poate folosi, indiferent de continut. Acest ghid te ajuta sa intelegi ce se ascunde cu adevarat in spatele etichetei, cum sa alegi cosmetice cu ingrediente curate si cum sa construiesti o rutina de ingrijire simpla si eficienta.",
+    body: `
+<h2>Ce inseamna cu adevarat un cosmetic 'natural'?</h2>
+<p>Un cosmetic natural ar trebui sa contina ingrediente de origine vegetala, minerala sau animala (de ex. miere, ceara de albine), obtinute prin procese care le pastreaza integritatea — extractie la rece, distilare, presare. Standardele voluntare precum <strong>COSMOS Natural</strong> (certificare europeana) sau <strong>NATRUE</strong> impun limite clare pentru ingredientele sintetice permise.</p>
+<p>In absenta unei certificari, citeste lista INCI (International Nomenclature of Cosmetic Ingredients) de pe ambalaj. Cu cat lista e mai scurta si mai recognoscibila, cu atat mai bine.</p>
+
+<h2>Cum citesti eticheta INCI</h2>
+<p>Ingredientele sunt listate <strong>in ordine descrescatoare a concentratiei</strong>. Cele care apar dupa 1% pot fi in orice ordine — de obicei conservantii, parfumul si colorantii.</p>
+<ul>
+  <li><strong>Primele 5-7 ingrediente</strong> formeaza baza produsului — acestea conteaza cel mai mult.</li>
+  <li>Ingredientele cu denumire latina (ex. <em>Rosa canina fruit oil</em>) sunt in general de origine naturala.</li>
+  <li>Ingredientele terminate in <em>-cone</em> sau <em>-siloxane</em> sunt silicoani sintetici.</li>
+  <li><em>Parfum / Fragrance</em> poate ascunde zeci de substante nedeclarate — verifica daca e specificat ca "parfum natural".</li>
+</ul>
+
+<h2>Ingrediente de evitat (sau de cunoscut)</h2>
+<ul>
+  <li><strong>Parabeni</strong> (methylparaben, propylparaben) — conservanti sintetici controversati; multe branduri naturale ii evita.</li>
+  <li><strong>SLS / SLES</strong> (sodium lauryl/laureth sulfate) — agenti de spumare agresivi pentru pielea sensibila.</li>
+  <li><strong>PEG-uri</strong> (polyethylene glycols) — emulgatori sintetici care pot creste permeabilitatea pielii.</li>
+  <li><strong>Dioxid de titan nano</strong> (in creme de zi) — utilizare precauta in produse de protectie solara.</li>
+  <li><strong>Parfum sintetic</strong> (<em>Fragrance</em> nedeclarata) — sursa frecventa de alergii de contact.</li>
+</ul>
+<p>Citeste si articolul dedicat: <a href="/articole/cosmetice-naturale-fara-parabeni">Cosmetice naturale fara parabeni</a>.</p>
+
+<h2>Ingrediente vedeta in cosmeticele naturale</h2>
+<h3>Uleiuri vegetale</h3>
+<p>Ulei de argan, jojoba, macadam, trandafir — bogate in acizi grasi esentiali si vitamina E, hranese si protejeaza bariera lipidica a pielii. Se potrivesc tipurilor de piele uscata si normala; uleiurile non-cogenogene (jojoba, par de cocos fractionat) si pentru ten gras.</p>
+
+<h3>Extracte din plante</h3>
+<p>Aloe vera, musetel, lavanda, calendula — calmeaza, reduc aspectul iritat si sustin hidratarea de suprafata. <a href="/produse/aloe">Linia Aloe Snep</a> valorifica proprietatile gelului pur de aloe vera.</p>
+
+<h3>Acizi naturali (AHA)</h3>
+<p>Acid lactic (din fermentatie), acid mandelic (din migdale amare) — exfolianti blandi care uniformizeaza textura si aspectul tenului. Mai blanzi decat acidul glicolic pur pentru inceput.</p>
+
+<h3>Uleiuri esentiale</h3>
+<p>Lavanda, tea tree, rozmarin — active in concentratii mici (sub 1% in formule), cu rol antimicrobian si aromatic. Niciodata aplicate nepur pe piele. Citeste <a href="/ghid/uleiuri-esentiale-utilizari">ghidul uleiurilor esentiale</a> pentru utilizare corecta.</p>
+
+<h2>Rutina de baza cu cosmetice naturale</h2>
+<h3>Dimineata</h3>
+<ol>
+  <li><strong>Curatare blanda</strong> — gel sau spuma cu SLS-free, pH 5-5.5.</li>
+  <li><strong>Toner / apa florala</strong> — hidrolat de trandafir sau lavanda, echilibreaza pH-ul.</li>
+  <li><strong>Ser sau ulei usor</strong> — 2-3 picaturi ulei jojoba sau ser cu aloe.</li>
+  <li><strong>Crema de zi cu SPF</strong> — filtru mineral (oxid de zinc) pentru protectie UV.</li>
+</ol>
+<h3>Seara</h3>
+<ol>
+  <li><strong>Demachiant</strong> — ulei de curatare sau balsam pentru dizolvarea machiajului si SPF.</li>
+  <li><strong>Curatare</strong> — repetarea pasului 1 de dimineata.</li>
+  <li><strong>Tratament noapte</strong> — crema sau ulei mai bogat (argan, macadam); pielea se regenereaza noaptea.</li>
+</ol>
+<p>O rutina de 4-5 pasi simpli este suficienta. Adaugarea a prea multe produse simultan face dificila identificarea cauzei unei reactii.</p>
+
+<h2>Ingrijirea corpului cu produse naturale</h2>
+<p>Principiile sunt aceleasi ca pentru fata, dar pielea corpului este mai putin sensibila si accepta mai bine ingrediente mai puternice. Verifica <a href="/produse/corp">gama Corp din catalogul Snep</a> pentru lotiuni, uleiuri si geluri de dus cu ingrediente naturale.</p>
+
+<h2>Ingrijirea parului</h2>
+<p>Samponurile naturale evita SLS si SLES, folosind in schimb tensiactivi mai blanzi (cocobetaina, decyl glucoside). <a href="/produse/par">Linia de ingrijire a parului Snep</a> include formule fara sulfati si fara parabeni.</p>
+
+<h2>De ce Snep si de ce Olivox</h2>
+<p>Snep SpA formuleaza cosmetice cu ingrediente selectate din surse naturale, fara coloranti azoici si fara parabeni. Olivox.ro livreaza catalogul oficial in Romania in 3-5 zile lucratoare, cu factura fiscala si suport in romana. Descopera <a href="/produse/fata">gama Fata</a> si <a href="/produse/corp">gama Corp</a> pentru o rutina completa.</p>
+`,
+    faq: [
+      {
+        q: "Cosmeticele naturale sunt potrivite pentru toate tipurile de piele?",
+        a: "In general da, dar 'natural' nu inseamna automat 'hipoalergenic'. Uleiurile esentiale, de exemplu, pot irita pielea sensibila. Fa intotdeauna un test patch pe antebrat inainte de a folosi un produs nou.",
+      },
+      {
+        q: "Cat de diferita este durata de valabilitate fata de cosmeticele conventionale?",
+        a: "Produsele cu conservanti naturali (vitamina E, extract de rozmarin) au de regula 12-24 luni in ambalaj inchis. Dupa deschidere, respecta PAO (Period After Opening) inscriptionat pe ambalaj cu simbolul borcanului deschis.",
+      },
+      {
+        q: "Pot folosi uleiuri vegetale pure ca hidratant de fata?",
+        a: "Da, cu selectia potrivita pentru tipul de piele. Jojoba si perle de cocos fractionat sunt non-cogenogene (nu infunda porii). Uleiul de argan e bun pentru ten normal spre uscat. Evita uleiuri bogate (cocos, palmier) daca ai ten acneic.",
+      },
+      {
+        q: "Ce inseamna 'fara parabeni' pe eticheta?",
+        a: "Inseamna ca produsul nu contine methylparaben, ethylparaben, propylparaben sau butylparaben — conservanti sintetici controversati pentru potentialul efect estrogenic. In schimb pot fi folositi conservanti alternativi: fenoxietanol, acid benzoic, extract de rozmarin.",
+      },
+    ],
+    relatedCategories: [
+      { label: "Ingrijire fata", href: "/produse/fata" },
+      { label: "Ingrijire corp", href: "/produse/corp" },
+      { label: "Ingrijirea parului", href: "/produse/par" },
+      { label: "Aloe", href: "/produse/aloe" },
+    ],
+    relatedProducts: [
+      { label: "Gama Fata Snep", href: "/produse/fata" },
+      { label: "Gama Corp Snep", href: "/produse/corp" },
+    ],
+    relatedArticles: [
+      { label: "Cosmetice naturale fara parabeni", href: "/articole/cosmetice-naturale-fara-parabeni" },
+      { label: "Uleiuri esentiale: utilizari si beneficii", href: "/ghid/uleiuri-esentiale-utilizari" },
+    ],
+  },
 };
 
 export function generateStaticParams() {
