@@ -321,6 +321,18 @@ export default function ProductPage() {
           <button type="submit" className="pd-form__submit" disabled={submitting || !inStock}>
             {submitting ? "Se trimite..." : inStock ? "Comanda acum" : "Indisponibil momentan"}
           </button>
+          <p style={{
+            marginTop: "0.75rem",
+            padding: "0.6rem 0.9rem",
+            border: "1.5px dashed #dc2626",
+            borderRadius: "6px",
+            color: "#dc2626",
+            fontSize: "0.82rem",
+            lineHeight: "1.45",
+            textAlign: "center",
+          }}>
+            ⚠️ Comenzile se expediază doar după confirmarea plății online. Veți fi contactat imediat după plasarea comenzii.
+          </p>
         </form>
       )}
 
