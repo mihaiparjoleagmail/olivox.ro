@@ -674,6 +674,7 @@ export default async function OlivoxPillarPage() {
           <a href="/produse/programe" className="guide-related__cat">Programe</a>
         </div>
         <ul className="guide-related__links">
+          <li><a href="/kalosnep">KaloSnep: ghid complet</a></li>
           <li><a href="/ghid/suplimente-alimentare-naturale">Ghidul suplimentelor alimentare naturale</a></li>
           <li><a href="/ghid/cum-alegi-supliment">Cum alegi un supliment alimentar</a></li>
           <li><a href="/articole/realcomplex-snep-ghid">RealComplex Snep: ghid complet</a></li>

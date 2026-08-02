@@ -20,6 +20,24 @@ const SUPPLEMENT_CATEGORIES = new Set([
   "omega-si-perle", "proteina", "alimente", "cafea", "choco",
 ]);
 
+// Product families that have a pillar guide. First match wins.
+const PILLAR_GUIDES: { match: RegExp; href: string; title: string; blurb: string }[] = [
+  {
+    match: /^oliv/i,
+    href: "/olivox-supliment-antioxidant",
+    title: "Ghid complet Olivox",
+    blurb:
+      "ce inseamna extractul titrat de frunze de maslin, diferenta dintre capsule, sticla si Olivox 40, mod de utilizare si contraindicatii.",
+  },
+  {
+    match: /^kalo/i,
+    href: "/kalosnep",
+    title: "Ghid complet KaloSnep",
+    blurb:
+      "diferenta dintre plicuri, capsule si Kalogel, compozitia cu cifrele de pe eticheta, administrare si avertismentele importante.",
+  },
+];
+
 function isOptimized(url: string): boolean {
   try {
     return OPTIMIZED_IMAGE_HOSTS.includes(new URL(url).hostname);
@@ -47,8 +65,9 @@ export default async function ProductPage({ params }: Props) {
   const categories = product.category_slugs || [];
   const needsDisclaimer = categories.some((c) => SUPPLEMENT_CATEGORIES.has(c));
   const related = await getRelatedProducts(categorySlug, product.slug);
-  // Products in the olive-leaf family link back to the Olivox pillar guide.
-  const isOlivoxFamily = /^oliv/i.test(product.slug) || /^OLIV/i.test(product.name);
+  const pillar = PILLAR_GUIDES.find(
+    (p) => p.match.test(product.slug) || p.match.test(product.name)
+  );
 
   return (
     <div className="pd-wrap">
@@ -143,10 +162,9 @@ export default async function ProductPage({ params }: Props) {
         )}
       </div>
 
-      {isOlivoxFamily && (
-        <a href="/olivox-supliment-antioxidant" className="pd-pillar-link">
-          <strong>Ghid complet Olivox</strong> — ce inseamna extractul titrat de frunze de maslin, diferenta
-          dintre capsule, sticla si Olivox 40, mod de utilizare si contraindicatii.
+      {pillar && (
+        <a href={pillar.href} className="pd-pillar-link">
+          <strong>{pillar.title}</strong> — {pillar.blurb}
         </a>
       )}
 

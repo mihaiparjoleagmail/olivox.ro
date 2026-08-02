@@ -19,6 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/glosar`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${BASE}/brand/snep`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/olivox-supliment-antioxidant`, lastModified: now, changeFrequency: "weekly", priority: 0.95 },
+    { url: `${BASE}/kalosnep`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
   ];
 
   const guides: MetadataRoute.Sitemap = [

@@ -20,6 +20,7 @@ const KNOWN_PREFIXES = [
   "/ghid",
   "/brand",
   "/olivox-supliment-antioxidant",
+  "/kalosnep",
   "/glosar",
   "/intrebari-frecvente",
   "/feed",
