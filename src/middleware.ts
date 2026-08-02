@@ -23,6 +23,7 @@ const KNOWN_PREFIXES = [
   "/kalosnep",
   "/sneplumina",
   "/realfibre",
+  "/trico-salus",
   "/glosar",
   "/intrebari-frecvente",
   "/feed",

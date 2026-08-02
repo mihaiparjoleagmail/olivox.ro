@@ -37,6 +37,14 @@ const PILLAR_GUIDES: { match: RegExp; href: string; title: string; blurb: string
       "diferenta dintre plicuri, capsule si Kalogel, compozitia cu cifrele de pe eticheta, administrare si avertismentele importante.",
   },
   {
+    // `trico[- ]salus`, not `trico`, so the TRICOU t-shirts never match.
+    match: /^trico[- ]salus/i,
+    href: "/trico-salus",
+    title: "Ghid complet Trico-Salus",
+    blurb:
+      "protocoalele recomandate pentru matreata, scalp gras, scalp uscat si rarire, ce contine fiecare sampon si cand e cazul sa mergi la dermatolog.",
+  },
+  {
     match: /^sneplumina/i,
     href: "/sneplumina",
     title: "Ghid complet SnepLumina",

@@ -22,6 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/kalosnep`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${BASE}/sneplumina`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${BASE}/realfibre`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${BASE}/trico-salus`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
   ];
 
   const guides: MetadataRoute.Sitemap = [

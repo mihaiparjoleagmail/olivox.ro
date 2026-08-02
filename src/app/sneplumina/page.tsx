@@ -568,6 +568,7 @@ export default async function SnepluminaPillarPage() {
           <a href="/produse/makeup" className="guide-related__cat">Make-up</a>
         </div>
         <ul className="guide-related__links">
+          <li><a href="/trico-salus">Trico-Salus: ghid complet</a></li>
           <li><a href="/ghid/cosmetice-naturale">Ghidul cosmeticelor naturale</a></li>
           <li><a href="/articole/cosmetice-naturale-fara-parabeni">Cosmetice fara parabeni: ce sa cauti pe eticheta</a></li>
           <li><a href="/olivox-supliment-antioxidant">Olivox: ghid complet</a></li>
