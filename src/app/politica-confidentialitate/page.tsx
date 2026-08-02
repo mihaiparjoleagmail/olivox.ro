@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 export const metadata: Metadata = {
   title: "Politica de Confidentialitate | olivox.ro",
   description: "Politica de confidentialitate GDPR a site-ului olivox.ro. Cum colectam, utilizam si protejam datele dumneavoastra personale.",
+  alternates: { canonical: "https://olivox.ro/politica-confidentialitate" },
   robots: { index: true, follow: true },
 };
 

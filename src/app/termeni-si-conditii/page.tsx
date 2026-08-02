@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 export const metadata: Metadata = {
   title: "Termeni si Conditii | olivox.ro",
   description: "Termeni si conditii de utilizare a site-ului olivox.ro. Informatii despre comenzi, livrare, returnare si garantie.",
+  alternates: { canonical: "https://olivox.ro/termeni-si-conditii" },
   robots: { index: true, follow: true },
 };
 
