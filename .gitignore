@@ -46,3 +46,5 @@ next-env.d.ts
 
 # scraper session
 .mysnep-session.json
+
+.vercel
