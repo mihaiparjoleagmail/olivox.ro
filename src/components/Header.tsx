@@ -72,6 +72,7 @@ export default function Header() {
               onBlur={() => { if (!searchQuery) setSearchOpen(false); }} />
           </div>
           <nav className="site-header__links" style={{ display: "flex", gap: 16, alignItems: "center" }} aria-label="Navigare principala">
+            <a href="/olivox-supliment-antioxidant" className="site-header__link">Olivox</a>
             <a href="/ghid/suplimente-alimentare-naturale" className="site-header__link">Ghiduri</a>
             <a href="/articole" className="site-header__link">Articole</a>
             <a href="/contact" className="site-header__link">Contact</a>

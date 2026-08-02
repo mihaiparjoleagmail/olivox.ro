@@ -3633,6 +3633,53 @@ h2.eyebrow { margin: 0 0 14px; }
   font-style: italic; color: var(--color-text-muted);
 }
 
+/* Variant comparison table on the Olivox pillar page */
+.olivox-table-wrap { overflow-x: auto; margin: 0 0 24px; }
+.olivox-table {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.olivox-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--color-bg-soft);
+  border-bottom: 2px solid var(--color-border);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+.olivox-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.olivox-table tr:last-child td { border-bottom: none; }
+.olivox-table td:last-child { font-weight: 700; color: var(--color-primary); white-space: nowrap; }
+
+/* Link from an Olivox product page back to the pillar guide */
+.pd-pillar-link {
+  display: block;
+  margin-top: 20px;
+  padding: 14px 18px;
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--color-text);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  text-decoration: none;
+  transition: all var(--transition);
+}
+.pd-pillar-link:hover { background: var(--color-surface); border-color: var(--color-primary); }
+.pd-pillar-link strong { color: var(--color-primary); }
+
 /* Legal disclaimer required on every article with a health claim */
 .prose .art-disclaimer {
   margin: 32px 0 0;

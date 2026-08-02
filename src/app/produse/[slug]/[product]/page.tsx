@@ -47,6 +47,8 @@ export default async function ProductPage({ params }: Props) {
   const categories = product.category_slugs || [];
   const needsDisclaimer = categories.some((c) => SUPPLEMENT_CATEGORIES.has(c));
   const related = await getRelatedProducts(categorySlug, product.slug);
+  // Products in the olive-leaf family link back to the Olivox pillar guide.
+  const isOlivoxFamily = /^oliv/i.test(product.slug) || /^OLIV/i.test(product.name);
 
   return (
     <div className="pd-wrap">
@@ -140,6 +142,13 @@ export default async function ProductPage({ params }: Props) {
           </article>
         )}
       </div>
+
+      {isOlivoxFamily && (
+        <a href="/olivox-supliment-antioxidant" className="pd-pillar-link">
+          <strong>Ghid complet Olivox</strong> — ce inseamna extractul titrat de frunze de maslin, diferenta
+          dintre capsule, sticla si Olivox 40, mod de utilizare si contraindicatii.
+        </a>
+      )}
 
       {related.length > 0 && (
         <section className="pd-related">

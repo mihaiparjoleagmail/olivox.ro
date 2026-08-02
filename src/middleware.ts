@@ -19,6 +19,7 @@ const KNOWN_PREFIXES = [
   "/de-ce-snep",
   "/ghid",
   "/brand",
+  "/olivox-supliment-antioxidant",
   "/glosar",
   "/intrebari-frecvente",
   "/feed",
