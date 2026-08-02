@@ -36,6 +36,20 @@ const PILLAR_GUIDES: { match: RegExp; href: string; title: string; blurb: string
     blurb:
       "diferenta dintre plicuri, capsule si Kalogel, compozitia cu cifrele de pe eticheta, administrare si avertismentele importante.",
   },
+  {
+    match: /^sneplumina/i,
+    href: "/sneplumina",
+    title: "Ghid complet SnepLumina",
+    blurb:
+      "ce contine fiecare produs, rutina in trei pasi, ce inseamna exact claim-urile de pe eticheta si cand ai nevoie de Trico-Salus in loc.",
+  },
+  {
+    match: /^realfibre/i,
+    href: "/realfibre",
+    title: "Ghid complet RealFibre",
+    blurb:
+      "prebiotic, nu probiotic — compozitia in cifre, diferenta dintre pudra, plicuri si comprimate si ce sa astepti in primele zile.",
+  },
 ];
 
 function isOptimized(url: string): boolean {

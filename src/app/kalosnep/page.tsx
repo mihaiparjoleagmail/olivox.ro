@@ -224,7 +224,7 @@ export default async function KalosnepPillarPage() {
       </header>
 
       <div className="prose">
-        <h2>Nu exista „un" KaloSnep. Exista patru produse.</h2>
+        <h2>Nu exista „un” KaloSnep. Exista patru produse.</h2>
         <p>
           Aceasta este sursa a jumatate din confuzie. Sub umbrela KaloSnep / Kalo se afla:
         </p>
@@ -314,7 +314,7 @@ export default async function KalosnepPillarPage() {
             formula. Plicurile se platesc pentru comoditate si portionare, nu pentru continut.
           </li>
           <li>
-            Kalogel tine 15 zile, nu 30. Daca il compari mental cu o cutie de capsule „pe luna", compari
+            Kalogel tine 15 zile, nu 30. Daca il compari mental cu o cutie de capsule „pe luna”, compari
             gresit.
           </li>
         </ul>
@@ -372,7 +372,7 @@ export default async function KalosnepPillarPage() {
           piperina sau fara alta forma de crestere a biodisponibilitatii, formula e incompleta.
         </p>
 
-        <h3>Ce inseamna „titrat 97% in berberina"</h3>
+        <h3>Ce inseamna „titrat 97% in berberina”</h3>
         <p>
           Inseamna ca din cele 300 mg de extract de Berberis, 291 mg sunt berberina propriu-zisa. Este o
           concentratie mare, iar berberina este un compus cu efecte reale si documentate — motiv pentru care
@@ -441,7 +441,7 @@ export default async function KalosnepPillarPage() {
           formeaza gel are nevoie de lichid suficient; luata cu putina apa poate provoca disconfort.
         </p>
 
-        <h3>Ce inseamna „1×10⁹ UFC" la probiotic</h3>
+        <h3>Ce inseamna „1×10⁹ UFC” la probiotic</h3>
         <p>
           UFC inseamna <strong>unitati formatoare de colonii</strong> — numarul de bacterii vii capabile sa se
           multiplice, la momentul fabricatiei sau la termenul de valabilitate, in functie de cum declara
@@ -450,7 +450,7 @@ export default async function KalosnepPillarPage() {
         <p>
           Cifra singura nu spune totul. La probiotice conteaza si tulpina exacta, nu doar specia — de aceea
           eticheta scrie <em>Bifidobacterium breve <strong>Bb-18</strong></em>, cu identificatorul tulpinii, nu
-          doar „bifidobacterium". O eticheta care declara doar genul si specia, fara tulpina si fara UFC, iti
+          doar „bifidobacterium”. O eticheta care declara doar genul si specia, fara tulpina si fara UFC, iti
           ascunde exact informatia care conteaza.
         </p>
         <p>
@@ -533,7 +533,7 @@ export default async function KalosnepPillarPage() {
           </li>
         </ul>
 
-        <h2>„Formulat dupa traditia ayurvedica" — ce inseamna si ce nu inseamna</h2>
+        <h2>„Formulat dupa traditia ayurvedica” — ce inseamna si ce nu inseamna</h2>
         <p>
           Descrierea produsului trimite la medicina ayurvedica, iar asta merita o clarificare, pentru ca
           formularea e folosita adesea ca argument de autoritate.
@@ -575,7 +575,7 @@ export default async function KalosnepPillarPage() {
           </li>
           <li>
             <strong>Utilizarea la nesfarsit.</strong> Eticheta cere consultarea medicului pentru perioade
-            indelungate. Nu este un produs „de fond".
+            indelungate. Nu este un produs „de fond”.
           </li>
         </ul>
 
@@ -637,7 +637,7 @@ export default async function KalosnepPillarPage() {
 
         <h2>Testele de lot si de unde comanzi</h2>
         <p>
-          Pe fisele KaloSnep si Kalogel apar coduri de tip „nichel test" — verificari pe lot care confirma ca
+          Pe fisele KaloSnep si Kalogel apar coduri de tip „nichel test” — verificari pe lot care confirma ca
           nivelul de nichel se afla sub pragul stabilit. Conteaza pentru persoanele cu sensibilitate la nichel.
         </p>
         <p>
@@ -651,7 +651,7 @@ export default async function KalosnepPillarPage() {
         <p className="art-cta">
           Nu esti sigur ce varianta ti se potriveste — sau daca ti se potriveste vreuna? Scrie-ne pe{" "}
           <a href="https://wa.me/40779243541" rel="nofollow">WhatsApp</a> sau suna la{" "}
-          <a href="tel:0779243541">0779 243 541</a>. Daca raspunsul corect e „intreaba intai medicul", asta iti
+          <a href="tel:0779243541">0779 243 541</a>. Daca raspunsul corect e „intreaba intai medicul”, asta iti
           vom spune.
         </p>
 

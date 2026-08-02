@@ -247,7 +247,7 @@ export default async function OlivoxPillarPage() {
           siliciu si saruri de magneziu ale acizilor grasi. O capsula are 530 mg, cutia are 60 de capsule.
         </p>
 
-        <h3>Ce inseamna „titrat 40% in oleuropeina"</h3>
+        <h3>Ce inseamna „titrat 40% in oleuropeina”</h3>
         <p>
           Este cel mai important cuvant de pe eticheta si aproape nimeni nu il explica. Un extract{" "}
           <strong>titrat</strong> garanteaza o cantitate exacta de principiu activ in fiecare doza. Un extract
@@ -255,8 +255,8 @@ export default async function OlivoxPillarPage() {
           de extractie — iar diferenta poate fi de cateva ori, nu de cateva procente.
         </p>
         <p>
-          Cand vezi „extract de frunze de maslin 350 mg" fara procent, nu stii nimic despre cat activ primesti.
-          Cand vezi „350 mg titrat 40% in oleuropeina", stii ca primesti 140 mg de oleuropeina. Este criteriul
+          Cand vezi „extract de frunze de maslin 350 mg” fara procent, nu stii nimic despre cat activ primesti.
+          Cand vezi „350 mg titrat 40% in oleuropeina”, stii ca primesti 140 mg de oleuropeina. Este criteriul
           numarul unu din <a href="/ghid/cum-alegi-supliment">ghidul despre cum alegi un supliment</a>.
         </p>
 
@@ -320,7 +320,7 @@ export default async function OlivoxPillarPage() {
 
         <h2>Variantele Olivox si care ti se potriveste</h2>
         <p>
-          Aici se incurca cei mai multi. „Olivox" nu este un singur produs, ci o familie — iar Olivox 40 nu
+          Aici se incurca cei mai multi. „Olivox” nu este un singur produs, ci o familie — iar Olivox 40 nu
           este versiunea concentrata a Olivox clasic, cum se crede frecvent. Este o <strong>formula
           diferita</strong>.
         </p>
@@ -375,14 +375,14 @@ export default async function OlivoxPillarPage() {
           doua ori pe zi. Alege-l daca te intereseaza combinatia maslin + curcuma, nu doar oleuropeina.
         </p>
 
-        <h3>Olivò — varianta „doar maslin"</h3>
+        <h3>Olivò — varianta „doar maslin”</h3>
         <p>
           Daca vrei exclusiv oleuropeina, fara anghinare si tamarind, <a href="/produse/nevoi-specifice/olivograve">Olivò</a>{" "}
           aduce 800 mg extract titrat 40% la 2 capsule, adica <strong>320 mg oleuropeina pe zi</strong> — mai
           mult decat dublul Olivox clasic. Este cea mai concentrata optiune pe acest polifenol din tot catalogul.
         </p>
 
-        <h2>Rudele din catalog: familia „oli-"</h2>
+        <h2>Rudele din catalog: familia „oli-”</h2>
         <p>
           Snep are o linie intreaga construita pe extractul de maslin, fiecare produs cu o a doua planta care
           ii da directia:
@@ -400,7 +400,7 @@ export default async function OlivoxPillarPage() {
           </li>
         </ul>
         <p>
-          Toate pornesc de la aceeasi baza de maslin. Daca ai ajuns aici cautand „olivox" dar problema ta e
+          Toate pornesc de la aceeasi baza de maslin. Daca ai ajuns aici cautand „olivox” dar problema ta e
           alta, poate una dintre ele ti se potriveste mai bine. Vezi toata categoria{" "}
           <a href="/produse/nevoi-specifice">Nevoi specifice</a>.
         </p>
@@ -451,7 +451,7 @@ export default async function OlivoxPillarPage() {
 
         <h2>Olivox fata de alte surse de polifenoli</h2>
         <p>
-          Intrebarea corecta nu este „care e cel mai bun antioxidant", ci „ce rol are fiecare". Cateva repere
+          Intrebarea corecta nu este „care e cel mai bun antioxidant”, ci „ce rol are fiecare”. Cateva repere
           utile:
         </p>
         <ul>
@@ -476,7 +476,7 @@ export default async function OlivoxPillarPage() {
         </ul>
         <p>
           Cu alte cuvinte: polifenolii din frunza de maslin nu concureaza cu vitamina C, ci acopera alt
-          teritoriu. O rutina echilibrata nu se construieste din „cel mai puternic" produs, ci din surse
+          teritoriu. O rutina echilibrata nu se construieste din „cel mai puternic” produs, ci din surse
           diferite si constanta in timp.
         </p>
 
@@ -553,13 +553,13 @@ export default async function OlivoxPillarPage() {
 
         <h2>Ce inseamna testele de pe ambalaj</h2>
         <p>
-          Pe fisele Olivox apar coduri de tip „nichel test". Este o verificare pe lot care confirma ca nivelul
+          Pe fisele Olivox apar coduri de tip „nichel test”. Este o verificare pe lot care confirma ca nivelul
           de nichel se afla sub un prag stabilit. Nu e un detaliu de marketing: persoanele cu sensibilitate la
           nichel reactioneaza la cantitati mici prezente in alimente si suplimente, iar testarea pe lot este
           exact genul de transparenta pe care merita sa o ceri de la orice producator.
         </p>
 
-        <h2>„Supliment alimentar" — ce inseamna, din punct de vedere legal</h2>
+        <h2>„Supliment alimentar” — ce inseamna, din punct de vedere legal</h2>
         <p>
           Este o categorie definita, nu o eticheta comerciala. In Uniunea Europeana, suplimentele alimentare
           sunt reglementate prin <strong>Directiva 2002/46/CE</strong>, transpusa in legislatia romaneasca,
@@ -573,7 +573,7 @@ export default async function OlivoxPillarPage() {
           </li>
           <li>
             Claim-urile de sanatate permise sunt cele autorizate la nivel european, formulate ca „contribuie
-            la", „ajuta la mentinerea". Formularile de tip „poate sustine" pentru extractele vegetale reflecta
+            la”, „ajuta la mentinerea”. Formularile de tip „poate sustine” pentru extractele vegetale reflecta
             folosinta traditionala, nu o aprobare formala.
           </li>
           <li>

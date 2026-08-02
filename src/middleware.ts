@@ -21,6 +21,8 @@ const KNOWN_PREFIXES = [
   "/brand",
   "/olivox-supliment-antioxidant",
   "/kalosnep",
+  "/sneplumina",
+  "/realfibre",
   "/glosar",
   "/intrebari-frecvente",
   "/feed",
