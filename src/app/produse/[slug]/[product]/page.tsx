@@ -1,273 +1,71 @@
-"use client";
-
-import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { useParams } from "next/navigation";
-import { trackEvent } from "@/lib/analytics";
+import { notFound } from "next/navigation";
+import { getProduct, getRelatedProducts, stripHtml } from "./product-data";
+import OrderForm from "./OrderForm";
 
-interface BeaconPayload {
-  customer_name: string;
-  customer_phone: string;
-  customer_email: string;
-  address: string;
-  product_id?: number;
-  product_name: string;
-  product_slug: string;
-  url: string;
-  snapshot: Record<string, unknown>;
+interface Props {
+  params: Promise<{ slug: string; product: string }>;
 }
 
-interface Product {
-  id: number;
-  name: string;
-  slug: string;
-  r2_image_url: string;
-  image_url: string;
-  price: number;
-  currency?: string;
-  short_description: string;
-  description: string;
-  ingredients?: string | null;
-  warnings?: string | null;
-  usage_info?: string | null;
-  certifications?: string | null;
-  datasheet_r2_url?: string | null;
-  datasheet_url?: string | null;
-  category_slugs: string[];
-  sku?: string | null;
-  quantity?: string | null;
-  points?: number | null;
-  stock_status?: string | null;
+// Product pages are server-rendered so the name, description, ingredients and
+// usage notes exist in the HTML Google receives — not only after hydration.
+export const revalidate = 300;
+
+const OPTIMIZED_IMAGE_HOSTS = ["media.ghidulfunerar.ro", "huse.gravpoint.ro"];
+
+// Categories where the legal supplement disclaimer is required (see .claude/CLAUDE.md).
+const SUPPLEMENT_CATEGORIES = new Set([
+  "suplimente", "nevoi-specifice", "linia-real", "pur", "aloe", "ceaiuri",
+  "controlul-greutatii", "programe", "sport", "necesitatile-energetice",
+  "omega-si-perle", "proteina", "alimente", "cafea", "choco",
+]);
+
+function isOptimized(url: string): boolean {
+  try {
+    return OPTIMIZED_IMAGE_HOSTS.includes(new URL(url).hostname);
+  } catch {
+    return false;
+  }
 }
 
-export default function ProductPage() {
-  const params = useParams();
-  const productSlug = params.product as string;
+export default async function ProductPage({ params }: Props) {
+  const { slug: categorySlug, product: productSlug } = await params;
+  const product = await getProduct(productSlug);
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Missing product must answer 404, not 200 with an empty shell.
+  if (!product) notFound();
 
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [strada, setStrada] = useState("");
-  const [judetId, setJudetId] = useState("");
-  const [judetName, setJudetName] = useState("");
-  const [localitate, setLocalitate] = useState("");
-  const [judeteList, setJudeteList] = useState<{id:number;name:string}[]>([]);
-  const [localitatiList, setLocalitatiList] = useState<string[]>([]);
-  const [quantity, setQuantity] = useState(1);
-  const [observations, setObservations] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-
-  const sessionIdRef = useRef<string | null>(null);
-  const beaconDataRef = useRef<{ submitted: boolean; payload: BeaconPayload | null }>({
-    submitted: false,
-    payload: null,
-  });
-
-  useEffect(() => {
-    fetch(`/api/products?slug=${encodeURIComponent(productSlug)}`)
-      .then((r) => r.json())
-      .then((data) => {
-        const p = data?.product || (Array.isArray(data?.products) ? data.products[0] : null) || data;
-        if (p && p.id) {
-          setProduct(p as Product);
-          trackEvent("view_item", {
-            currency: (p as Product).currency || "RON",
-            value: Number((p as Product).price) || 0,
-            items: [{ item_id: (p as Product).id, item_name: (p as Product).name, price: (p as Product).price }],
-          });
-        }
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [productSlug]);
-
-  // Debounced beacon: 1.5s after any field change, send a snapshot to abandoned_carts.
-  useEffect(() => {
-    if (success) return;
-    const ref = beaconDataRef.current;
-    if (!ref.payload) return;
-    const sid = sessionIdRef.current || (typeof window !== "undefined" ? sessionStorage.getItem("cart_session_id") : null);
-    if (!sid) return;
-
-    const timer = setTimeout(() => {
-      const current = beaconDataRef.current;
-      if (current.submitted || !current.payload) return;
-      fetch("/api/orders/log-abandoned", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...current.payload, session_id: sid }),
-        keepalive: true,
-      }).catch(() => {});
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, [customerName, customerPhone, customerEmail, strada, localitate, judetName, observations, quantity, success]);
-
-  // Stable session ID + unload beacon listener.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    let sid = sessionStorage.getItem("cart_session_id");
-    if (!sid) {
-      sid = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-      sessionStorage.setItem("cart_session_id", sid);
-    }
-    sessionIdRef.current = sid;
-
-    const fire = () => {
-      const ref = beaconDataRef.current;
-      if (ref.submitted || !ref.payload) return;
-      const payload = { ...ref.payload, session_id: sid };
-      try {
-        const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
-        navigator.sendBeacon("/api/orders/log-abandoned", blob);
-      } catch {
-        fetch("/api/orders/log-abandoned", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          keepalive: true,
-        }).catch(() => {});
-      }
-    };
-
-    const onVisibility = () => { if (document.visibilityState === "hidden") fire(); };
-    document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("pagehide", fire);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("pagehide", fire);
-    };
-  }, []);
-
-  useEffect(() => {
-    fetch("/api/judete").then((r) => r.json()).then((data) => {
-      if (Array.isArray(data)) setJudeteList(data);
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!judetId) { setLocalitatiList([]); setLocalitate(""); return; }
-    fetch(`/api/localitati?judetId=${judetId}`).then((r) => r.json()).then((data) => {
-      if (Array.isArray(data)) setLocalitatiList(data);
-    }).catch(() => {});
-  }, [judetId]);
-
-  // Keep beacon payload in sync with latest form state on every render.
-  const combinedAddress = [strada.trim(), localitate, judetName].filter(Boolean).join(", ");
-  const hasContactInfo = !!(customerName.trim() || customerPhone.trim() || customerEmail.trim());
-  beaconDataRef.current = {
-    submitted: success,
-    payload: (hasContactInfo && product) ? {
-      customer_name: customerName.trim(),
-      customer_phone: customerPhone.trim(),
-      customer_email: customerEmail.trim(),
-      address: combinedAddress,
-      product_id: product.id,
-      product_name: product.name,
-      product_slug: product.slug,
-      url: typeof window !== "undefined" ? window.location.href : "",
-      snapshot: {
-        quantity,
-        observations: observations.trim(),
-        unit_price: Number(product.price) || 0,
-        currency: product.currency || "RON",
-        total: (Number(product.price) || 0) * Number(quantity),
-      },
-    } : null,
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!product) return;
-    setSubmitting(true);
-    setErrorMsg("");
-    try {
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          product_id: product.id,
-          product_name: product.name,
-          product_slug: product.slug,
-          quantity,
-          customer_name: customerName,
-          customer_phone: customerPhone,
-          customer_email: customerEmail,
-          address: combinedAddress,
-          observations,
-          order_value: Number(product.price) * Number(quantity),
-        }),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d?.error || "Eroare la plasarea comenzii");
-      }
-      const orderData = await res.json().catch(() => ({}));
-      const value = Number(product.price) * Number(quantity);
-      const currency = product.currency || "RON";
-      trackEvent("add_to_cart", {
-        currency,
-        value,
-        items: [{ item_id: product.id, item_name: product.name, quantity, price: product.price }],
-      });
-      trackEvent("purchase", {
-        transaction_id: orderData?.id ? String(orderData.id) : undefined,
-        currency,
-        value,
-        items: [{ item_id: product.id, item_name: product.name, quantity, price: product.price }],
-      });
-      setSuccess(true);
-      if (sessionIdRef.current) {
-        fetch(`/api/orders/log-abandoned?session_id=${encodeURIComponent(sessionIdRef.current)}`, {
-          method: "DELETE",
-          keepalive: true,
-        }).catch(() => {});
-        sessionStorage.removeItem("cart_session_id");
-      }
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : "Eroare");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (loading) return <div className="products-loading">Se incarca...</div>;
-  if (!product) return <div className="products-loading">Produsul nu a fost gasit.</div>;
-
-  const image = product.r2_image_url || product.image_url;
+  const image = product.r2_image_url || product.image_url || "";
   const currency = product.currency || "RON";
-  const total = Number(product.price) * Number(quantity);
+  const price = Number(product.price) || 0;
   const inStock = product.stock_status !== "out_of_stock";
+  const shortPlain = stripHtml(product.short_description);
+  const shortClipped = shortPlain.length > 180
+    ? shortPlain.slice(0, 177).replace(/\s+\S*$/, "") + "..."
+    : shortPlain;
+
+  const categories = product.category_slugs || [];
+  const needsDisclaimer = categories.some((c) => SUPPLEMENT_CATEGORIES.has(c));
+  const related = await getRelatedProducts(categorySlug, product.slug);
 
   return (
     <div className="pd-wrap">
       <section className="pd-hero">
         <div className="pd-hero__media">
-          {image && (() => {
-            let optimized = false;
-            try {
-              const h = new URL(image).hostname;
-              optimized = h === "media.ghidulfunerar.ro" || h === "huse.gravpoint.ro";
-            } catch {}
-            return optimized ? (
-              <Image
-                src={image}
-                alt={product.name}
-                width={640}
-                height={640}
-                sizes="(max-width: 768px) 100vw, 480px"
-                className="pd-hero__img"
-                priority
-              />
-            ) : (
-              <img src={image} alt={product.name} className="pd-hero__img" />
-            );
-          })()}
+          {image && (isOptimized(image) ? (
+            <Image
+              src={image}
+              alt={product.name}
+              width={640}
+              height={640}
+              sizes="(max-width: 768px) 100vw, 480px"
+              className="pd-hero__img"
+              priority
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={image} alt={product.name} className="pd-hero__img" />
+          ))}
         </div>
 
         <div className="pd-hero__info">
@@ -281,140 +79,95 @@ export default function ProductPage() {
 
           <h1 className="pd-hero__name">{product.name}</h1>
 
-          {product.short_description && (() => {
-            const plain = product.short_description.replace(/<[^>]+>/g, "").trim();
-            const clipped = plain.length > 180 ? plain.slice(0, 177).replace(/\s+\S*$/, "") + "..." : plain;
-            return <p className="pd-hero__short">{clipped}</p>;
-          })()}
+          {shortClipped && <p className="pd-hero__short">{shortClipped}</p>}
 
           <div className="pd-hero__price-row">
             <div className="pd-hero__price">
-              {Math.ceil(Number(product.price) || 0)} <span className="pd-hero__currency">{currency}</span>
+              {Math.ceil(price)} <span className="pd-hero__currency">{currency}</span>
             </div>
           </div>
         </div>
       </section>
 
-      {success ? (
-        <div className="pd-success">
-          <h3>Multumim pentru comanda!</h3>
-          <p>Te contactam in cel mai scurt timp pentru confirmare.</p>
-        </div>
-      ) : (
-        <form className="pd-form pd-form--stacked" onSubmit={handleSubmit}>
-          <div className="eyebrow">Plaseaza comanda</div>
-          <div className="pd-form__grid">
-            <div className="pd-form__row">
-              <label>Nume complet *</label>
-              <input type="text" required value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
-            </div>
-            <div className="pd-form__row">
-              <label>Telefon *</label>
-              <input type="tel" required value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
-            </div>
-            <div className="pd-form__row pd-form__row--full">
-              <label>Email</label>
-              <input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
-            </div>
-            <div className="pd-form__row">
-              <label>Județ *</label>
-              <select required value={judetId} onChange={(e) => {
-                const id = e.target.value;
-                setJudetId(id);
-                const j = judeteList.find((x) => String(x.id) === id);
-                setJudetName(j?.name || "");
-                setLocalitate("");
-              }}>
-                <option value="">Selectează județ</option>
-                {judeteList.map((j) => <option key={j.id} value={j.id}>{j.name}</option>)}
-              </select>
-            </div>
-            <div className="pd-form__row">
-              <label>Localitate *</label>
-              <select required value={localitate} onChange={(e) => setLocalitate(e.target.value)} disabled={!judetId}>
-                <option value="">{judetId ? "Selectează localitate" : "Alege județul mai întâi"}</option>
-                {localitatiList.map((l) => <option key={l} value={l}>{l}</option>)}
-              </select>
-            </div>
-            <div className="pd-form__row pd-form__row--full">
-              <label>Stradă, număr *</label>
-              <input type="text" required value={strada} onChange={(e) => setStrada(e.target.value)} placeholder="Strada, număr, bloc, apartament" />
-            </div>
-            <div className="pd-form__row pd-form__row--full">
-              <label>Observatii</label>
-              <textarea rows={2} value={observations} onChange={(e) => setObservations(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="pd-form__summary">
-            <div className="pd-form__qty">
-              <label>Cantitate</label>
-              <input type="number" min={1} value={quantity} onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))} />
-            </div>
-            <div className="pd-form__total">
-              <span>Total</span>
-              <strong>{Math.ceil(total)} {currency}</strong>
-            </div>
-          </div>
-          {errorMsg && <p className="pd-form__error">{errorMsg}</p>}
-          <button type="submit" className="pd-form__submit" disabled={submitting || !inStock}>
-            {submitting ? "Se trimite..." : inStock ? "Comanda acum" : "Indisponibil momentan"}
-          </button>
-          <p style={{
-            marginTop: "0.75rem",
-            padding: "0.6rem 0.9rem",
-            border: "1.5px dashed #dc2626",
-            borderRadius: "6px",
-            color: "#dc2626",
-            fontSize: "0.82rem",
-            lineHeight: "1.45",
-            textAlign: "center",
-          }}>
-            ⚠️ Comenzile se expediază doar după confirmarea plății online. Veți fi contactat imediat după plasarea comenzii.
-          </p>
-        </form>
-      )}
+      <OrderForm
+        product={{
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          price,
+          currency,
+          inStock,
+        }}
+      />
 
       <div className="pd-cards">
         {product.description && (
           <article className="pd-card">
-            <div className="eyebrow">Descriere</div>
+            <h2 className="eyebrow">Descriere {product.name}</h2>
             <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.description }} />
           </article>
         )}
         {product.ingredients && (
           <article className="pd-card">
-            <div className="eyebrow">Ce este inauntru</div>
+            <h2 className="eyebrow">Ce este inauntru</h2>
             <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.ingredients }} />
           </article>
         )}
         {product.usage_info && (
           <article className="pd-card">
-            <div className="eyebrow">Mod de utilizare</div>
+            <h2 className="eyebrow">Mod de utilizare</h2>
             <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.usage_info }} />
           </article>
         )}
         {product.warnings && (
           <article className="pd-card pd-card--warn">
-            <div className="eyebrow">Avertismente</div>
+            <h2 className="eyebrow">Avertismente</h2>
             <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.warnings }} />
           </article>
         )}
         {product.certifications && (
           <article className="pd-card pd-card--certifications">
-            <div className="eyebrow">Certificari</div>
+            <h2 className="eyebrow">Certificari</h2>
             <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.certifications }} />
           </article>
         )}
         {(product.datasheet_r2_url || product.datasheet_url) && (
           <article className="pd-card">
-            <div className="eyebrow">Specificatii tehnice</div>
+            <h2 className="eyebrow">Specificatii tehnice</h2>
             <a href={product.datasheet_r2_url || product.datasheet_url || "#"} target="_blank" rel="noopener" className="pd-card__pdf">
               Descarca fisa produs (PDF)
             </a>
           </article>
         )}
       </div>
+
+      {related.length > 0 && (
+        <section className="pd-related">
+          <h2 className="eyebrow">Produse din aceeasi categorie</h2>
+          <ul className="pd-related__list">
+            {related.map((r) => (
+              <li key={r.id}>
+                <a href={`/produse/${categorySlug}/${r.slug}`} className="pd-related__link">
+                  <span className="pd-related__name">{r.name}</span>
+                  {r.price != null && (
+                    <span className="pd-related__price">{Math.ceil(Number(r.price))} {r.currency || "RON"}</span>
+                  )}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {needsDisclaimer && (
+        <p className="pd-disclaimer">
+          Supliment alimentar. Acest text are caracter informativ si nu inlocuieste consultul medical.
+          Suplimentele alimentare nu sunt medicamente si nu sunt destinate tratarii, prevenirii sau vindecarii
+          vreunei boli. Nu depasi doza recomandata pe eticheta. A nu se lasa la indemana copiilor.
+          Consulta medicul inainte de utilizare, in special daca urmezi un tratament medicamentos,
+          esti insarcinata sau alaptezi.
+        </p>
+      )}
     </div>
   );
 }

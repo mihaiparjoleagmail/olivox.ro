@@ -1,62 +1,9 @@
 import type { Metadata } from "next";
-import { supabase } from "@/lib/supabase";
+import { getProduct, getCategoryName, stripHtml, truncate } from "./product-data";
 
 interface Props {
   params: Promise<{ slug: string; product: string }>;
   children: React.ReactNode;
-}
-
-interface ProductRow {
-  id: number;
-  name: string;
-  slug: string;
-  short_description: string | null;
-  description: string | null;
-  ingredients: string | null;
-  warnings: string | null;
-  usage_info: string | null;
-  certifications: string | null;
-  price: number | null;
-  currency: string | null;
-  sku: string | null;
-  stock_status: string | null;
-  r2_image_url: string | null;
-  image_url: string | null;
-  meta_title: string | null;
-  meta_description: string | null;
-  keywords: string | null;
-  category_slugs: string[] | null;
-}
-
-async function getProduct(productSlug: string): Promise<ProductRow | null> {
-  const { data } = await supabase
-    .from("products")
-    .select(
-      "id, name, slug, short_description, description, ingredients, warnings, usage_info, certifications, price, currency, sku, stock_status, r2_image_url, image_url, meta_title, meta_description, keywords, category_slugs"
-    )
-    .eq("slug", productSlug)
-    .single();
-  return (data as ProductRow) || null;
-}
-
-async function getCategoryName(slug: string) {
-  const { data } = await supabase
-    .from("product_categories")
-    .select("name")
-    .eq("slug", slug)
-    .single();
-  return data?.name || slug.replace(/-/g, " ");
-}
-
-function truncate(str: string, max: number): string {
-  if (!str || str.length <= max) return str;
-  const cut = str.slice(0, max - 1);
-  const lastSpace = cut.lastIndexOf(" ");
-  return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
-}
-
-function stripHtml(html: string | null): string {
-  return (html || "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
