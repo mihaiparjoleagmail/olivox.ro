@@ -2571,11 +2571,38 @@ a.pagination__btn {
   width: 100%;
 }
 .pd-form__qty input:focus { outline: none; border-color: var(--color-primary); background: #fff; }
+.pd-form__totals {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-left: auto;
+  min-width: 230px;
+}
+.pd-form__line {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.pd-form__line span:last-child {
+  color: var(--color-text);
+  font-weight: 600;
+}
 .pd-form__total {
   text-align: right;
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+.pd-form__totals .pd-form__total {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--color-border);
 }
 .pd-form__total span {
   font-size: 0.72rem;
@@ -2796,6 +2823,12 @@ h2.eyebrow { margin: 0 0 14px; }
   opacity: 0.7;
 }
 .pd-form--stacked > .eyebrow { display: block; margin-bottom: 16px; }
+/* Pe ecrane inguste, cantitatea si blocul de totaluri stau una sub alta. */
+@media (max-width: 520px) {
+  .pd-form__summary { flex-direction: column; align-items: stretch; gap: 14px; }
+  .pd-form__qty { max-width: none; }
+  .pd-form__totals { min-width: 0; width: 100%; }
+}
 @media (min-width: 820px) {
   .pd-form--stacked .pd-form__grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
   .pd-form--stacked .pd-form__row--full { grid-column: 1 / -1; }

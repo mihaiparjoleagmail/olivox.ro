@@ -8,6 +8,10 @@ export interface SiteConfig {
   currency: string;
   productPrice?: number;
   productionCost?: number;
+  /** Cost fix de livrare, adaugat la totalul comenzii. 0 = livrare gratuita. */
+  shippingCost: number;
+  /** Eticheta afisata clientului pentru linia de transport (ex: "Curier", "Curier Sameday"). */
+  shippingLabel: string;
   gravpointApiUrl?: string;
 
   companyName: string;
@@ -37,6 +41,8 @@ export const DEFAULT_CONFIG: SiteConfig = {
   currency: "RON",
   productPrice: 0,
   productionCost: 0,
+  shippingCost: 30,
+  shippingLabel: "Curier",
 
   companyName: "OLIVOX SRL",
   companyCIF: "",
@@ -69,6 +75,10 @@ export async function getSiteConfig(): Promise<SiteConfig> {
     if (data?.value) {
       const parsed = typeof data.value === "string" ? JSON.parse(data.value) : data.value;
       const merged = { ...DEFAULT_CONFIG, ...parsed };
+      // shippingCost trebuie sa fie mereu un numar (0 = livrare gratuita, valoare valida).
+      const ship = Number(merged.shippingCost);
+      merged.shippingCost = Number.isFinite(ship) && ship >= 0 ? ship : DEFAULT_CONFIG.shippingCost;
+      merged.shippingLabel = (merged.shippingLabel || "").trim() || DEFAULT_CONFIG.shippingLabel;
       cachedConfig = merged;
       cacheTime = Date.now();
       return merged;

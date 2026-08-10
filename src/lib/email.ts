@@ -12,7 +12,9 @@ interface OrderEmailData {
   customer_email?: string;
   address: string;
   observations?: string;
+  /** Total de plata: produse + transport. */
   order_value?: number;
+  shipping_cost?: number;
   order_id: number;
 }
 
@@ -50,7 +52,8 @@ export async function sendOrderEmail(data: OrderEmailData) {
       <table>
         <tr><td>Produs</td><td>${data.product_name || "—"}</td></tr>
         <tr><td>Cantitate</td><td>${data.quantity || 1}</td></tr>
-        ${data.order_value ? `<tr><td>Valoare</td><td>${data.order_value} RON</td></tr>` : ""}
+        ${data.shipping_cost ? `<tr><td>${config.shippingLabel}</td><td>${data.shipping_cost} RON</td></tr>` : ""}
+        ${data.order_value ? `<tr><td>Valoare</td><td>${data.order_value} RON${data.shipping_cost ? " (transport inclus)" : ""}</td></tr>` : ""}
         <tr><td>Nume</td><td>${data.customer_name}</td></tr>
         <tr><td>Telefon</td><td>${data.customer_phone}</td></tr>
         ${data.customer_email ? `<tr><td>Email</td><td>${data.customer_email}</td></tr>` : ""}
@@ -111,7 +114,8 @@ export async function sendClientEmail(data: OrderEmailData) {
         <tr><td>Comanda</td><td>#${data.order_id}</td></tr>
         <tr><td>Produs</td><td>${data.product_name || "—"}</td></tr>
         <tr><td>Cantitate</td><td>${data.quantity || 1}</td></tr>
-        ${data.order_value ? `<tr><td>Total</td><td>${data.order_value} RON</td></tr>` : ""}
+        ${data.shipping_cost ? `<tr><td>${config.shippingLabel}</td><td>${data.shipping_cost} RON</td></tr>` : ""}
+        ${data.order_value ? `<tr><td>Total de plata</td><td><strong>${data.order_value} RON</strong></td></tr>` : ""}
         <tr><td>Livrare la</td><td>${data.address}</td></tr>
       </table>
       <div style="border:1px solid #e5e7eb;border-left:4px solid #1a6b3a;border-radius:8px;padding:16px 18px;margin-bottom:20px;background:#f9fafb">
@@ -119,7 +123,7 @@ export async function sendClientEmail(data: OrderEmailData) {
         <p style="margin:0 0 10px;font-size:13px;color:#374151;line-height:1.5">
           Nu livram cu plata ramburs — coletul se expediaza dupa ce plata este inregistrata in cont.
           ${config.iban
-            ? `Poti face transferul cu datele de mai jos, mentionand la detaliile platii <strong>comanda #${data.order_id}</strong>:`
+            ? `Poti face transferul${data.order_value ? ` sumei de <strong>${data.order_value} RON</strong> (produse + transport)` : ""} cu datele de mai jos, mentionand la detaliile platii <strong>comanda #${data.order_id}</strong>:`
             : `Datele de plata ti le trimitem la confirmarea telefonica a comenzii.`}
         </p>
         ${config.iban ? `

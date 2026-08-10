@@ -129,6 +129,12 @@ export async function POST(request: Request) {
     const orderValue = (ramburs !== 0) ? ramburs : (order.order_value || siteConfig.productPrice || 0);
     const siteName = siteConfig.siteName || siteConfig.domain || "olivox.ro";
 
+    // order_value include transportul. Il facturam pe linie separata, cat timp
+    // ramane loc pentru produse (comenzi vechi, fara transport, raman neatinse).
+    const shipping = Number(siteConfig.shippingCost) || 0;
+    const hasShippingLine = shipping > 0 && orderValue > shipping;
+    const productsValue = hasShippingLine ? orderValue - shipping : orderValue;
+
     const payload = {
       CodUnic: fgo.cui,
       Hash: hash,
@@ -152,8 +158,15 @@ export async function POST(request: Request) {
           NrProduse: 1,
           UM: "BUC",
           CotaTVA: fgo.cota_tva ?? 0,
-          PretTotal: orderValue,
+          PretTotal: productsValue,
         },
+        ...(hasShippingLine ? [{
+          Denumire: siteConfig.shippingLabel || "Curier",
+          NrProduse: 1,
+          UM: "BUC",
+          CotaTVA: fgo.cota_tva ?? 0,
+          PretTotal: shipping,
+        }] : []),
       ],
       PlatformaUrl: fgo.platform_url || "https://olivox.ro",
     };

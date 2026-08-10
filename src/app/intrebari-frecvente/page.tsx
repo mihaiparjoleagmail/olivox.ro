@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { getSiteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = {
   title: "Intrebari frecvente (FAQ) — Olivox",
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://olivox.ro/intrebari-frecvente" },
 };
 
-const faqs: { q: string; a: string }[] = [
+function buildFaqs(shippingCost: number): { q: string; a: string }[] { return [
   {
     q: "In cat timp primesc coletul?",
     a: "Livrarea se face in 3-5 zile lucratoare de la confirmarea telefonica a comenzii, prin curier, in toata Romania.",
@@ -17,6 +18,12 @@ const faqs: { q: string; a: string }[] = [
   {
     q: "Cum platesc comanda?",
     a: "Plata se face exclusiv online, in avans, prin transfer bancar. Nu lucram cu plata ramburs. Dupa ce confirmam telefonic comanda, primesti pe email sau WhatsApp datele de plata (IBAN, beneficiar, numarul comenzii), iar coletul pleaca imediat ce plata intra in cont.",
+  },
+  {
+    q: "Cat costa transportul?",
+    a: shippingCost > 0
+      ? `Transportul costa ${shippingCost} lei, tarif fix, oriunde in Romania. Suma apare separat in formularul de comanda si este inclusa in totalul de plata, alaturi de valoarea produselor.`
+      : "Transportul este gratuit, oriunde in Romania.",
   },
   {
     q: "Pot returna produsele?",
@@ -71,18 +78,24 @@ const faqs: { q: string; a: string }[] = [
     a: "Pe email la comenzi@olivox.ro, prin formularul din pagina Contact sau pe WhatsApp folosind butonul flotant afisat pe fiecare pagina. Raspundem in maxim 24 de ore lucratoare.",
   },
 ];
+}
 
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: faqs.map((f) => ({
-    "@type": "Question",
-    name: f.q,
-    acceptedAnswer: { "@type": "Answer", text: f.a },
-  })),
-};
+// Costul de transport / datele firmei vin din site_config — reimprospatam periodic.
+export const revalidate = 300;
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  const { shippingCost } = await getSiteConfig();
+  const faqs = buildFaqs(shippingCost);
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
+
   return (
     <div className="page-wrapper">
       <Header />

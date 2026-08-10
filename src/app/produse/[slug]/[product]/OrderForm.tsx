@@ -24,7 +24,17 @@ export interface OrderFormProduct {
   inStock: boolean;
 }
 
-export default function OrderForm({ product }: { product: OrderFormProduct }) {
+export default function OrderForm({
+  product,
+  shippingCost = 0,
+  shippingLabel = "Curier",
+}: {
+  product: OrderFormProduct;
+  /** Cost fix de livrare, adaugat la total. 0 = livrare gratuita. */
+  shippingCost?: number;
+  /** Eticheta liniei de transport, din Admin -> Setari. */
+  shippingLabel?: string;
+}) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -48,6 +58,7 @@ export default function OrderForm({ product }: { product: OrderFormProduct }) {
 
   const currency = product.currency;
   const inStock = product.inStock;
+  const shipping = Math.max(0, Number(shippingCost) || 0);
 
   useEffect(() => {
     trackEvent("view_item", {
@@ -147,12 +158,14 @@ export default function OrderForm({ product }: { product: OrderFormProduct }) {
         observations: observations.trim(),
         unit_price: Number(product.price) || 0,
         currency,
-        total: (Number(product.price) || 0) * Number(quantity),
+        shipping_cost: shipping,
+        total: Math.ceil((Number(product.price) || 0) * Number(quantity)) + shipping,
       },
     } : null,
   };
 
-  const total = Number(product.price) * Number(quantity);
+  const productsTotal = Math.ceil((Number(product.price) || 0) * Number(quantity));
+  const total = productsTotal + shipping;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,7 +185,9 @@ export default function OrderForm({ product }: { product: OrderFormProduct }) {
           customer_email: customerEmail,
           address: combinedAddress,
           observations,
-          order_value: Number(product.price) * Number(quantity),
+          shipping_cost: shipping,
+          // Totalul pe care il plateste clientul prin transfer: produse + transport.
+          order_value: total,
         }),
       });
       if (!res.ok) {
@@ -180,16 +195,16 @@ export default function OrderForm({ product }: { product: OrderFormProduct }) {
         throw new Error(d?.error || "Eroare la plasarea comenzii");
       }
       const orderData = await res.json().catch(() => ({}));
-      const value = Number(product.price) * Number(quantity);
       trackEvent("add_to_cart", {
         currency,
-        value,
+        value: productsTotal,
         items: [{ item_id: product.id, item_name: product.name, quantity, price: product.price }],
       });
       trackEvent("purchase", {
         transaction_id: orderData?.id ? String(orderData.id) : undefined,
         currency,
-        value,
+        value: total,
+        shipping,
         items: [{ item_id: product.id, item_name: product.name, quantity, price: product.price }],
       });
       setSuccess(true);
@@ -272,9 +287,19 @@ export default function OrderForm({ product }: { product: OrderFormProduct }) {
           <label>Cantitate</label>
           <input type="number" min={1} value={quantity} onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))} />
         </div>
-        <div className="pd-form__total">
-          <span>Total</span>
-          <strong>{Math.ceil(total)} {currency}</strong>
+        <div className="pd-form__totals">
+          <div className="pd-form__line">
+            <span>Produse</span>
+            <span>{productsTotal} {currency}</span>
+          </div>
+          <div className="pd-form__line">
+            <span>{shippingLabel}</span>
+            <span>{shipping > 0 ? `${shipping} ${currency}` : "Gratuit"}</span>
+          </div>
+          <div className="pd-form__total">
+            <span>Total de plata</span>
+            <strong>{total} {currency}</strong>
+          </div>
         </div>
       </div>
       {errorMsg && <p className="pd-form__error">{errorMsg}</p>}

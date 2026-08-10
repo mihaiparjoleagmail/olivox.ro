@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
+import { getSiteConfig } from "@/lib/site-config";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
@@ -15,7 +16,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function LivrareReturPage() {
+// Costul de transport / datele firmei vin din site_config — reimprospatam periodic.
+export const revalidate = 300;
+
+export default async function LivrareReturPage() {
+  const { shippingCost, shippingLabel } = await getSiteConfig();
+
   return (
     <div className="page-wrapper">
       <Header />
@@ -35,7 +41,10 @@ export default function LivrareReturPage() {
           <ul className="bullets">
             <li><strong>Termen:</strong> 3-5 zile lucratoare de la confirmarea telefonica a comenzii.</li>
             <li><strong>Acoperire:</strong> toata Romania, prin curier (FanCourier sau Sameday).</li>
-            <li><strong>Cost:</strong> afisat la finalul formularului, in functie de localitate si greutate.</li>
+            <li><strong>Cost transport ({shippingLabel.toLowerCase()}):</strong>{" "}
+              {shippingCost > 0
+                ? `${shippingCost} lei, tarif fix, oriunde in Romania — se adauga automat la totalul din formular.`
+                : "gratuit, oriunde in Romania."}</li>
             <li><strong>Plata:</strong> exclusiv online, in avans, prin transfer bancar. Nu livram cu plata ramburs.</li>
             <li><strong>Tracking:</strong> primesti codul AWB pe email sau SMS cand coletul pleaca.</li>
           </ul>

@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Footer from "@/components/Footer";
+import { getSiteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = {
   title: "Termeni si Conditii | olivox.ro",
@@ -8,7 +9,12 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function TermeniPage() {
+// Costul de transport / datele firmei vin din site_config — reimprospatam periodic.
+export const revalidate = 300;
+
+export default async function TermeniPage() {
+  const { shippingCost } = await getSiteConfig();
+
   return (
     <div className="page-wrapper">
       <header className="header">
@@ -40,7 +46,10 @@ export default function TermeniPage() {
         <p>Dupa confirmarea telefonica a comenzii, clientul primeste pe email sau WhatsApp datele de plata (beneficiar, IBAN, suma totala si numarul comenzii). Comanda este expediata numai dupa ce plata este inregistrata in contul vanzatorului. Daca plata nu este efectuata in termen de 5 zile lucratoare de la confirmare, comanda poate fi anulata, fara alte obligatii pentru niciuna dintre parti.</p>
 
         <h2>5. Livrare</h2>
-        <p>Comenzile sunt procesate in 1-2 zile lucratoare de la plasare. Livrarea se face prin curier, in 1-2 zile lucratoare suplimentare. Livrarea este gratuita pe teritoriul Romaniei.</p>
+        <p>Comenzile sunt procesate in 1-2 zile lucratoare de la confirmarea platii. Livrarea se face prin curier, in 3-5 zile lucratoare, pe teritoriul Romaniei.</p>
+        {shippingCost > 0
+          ? <p>Costul transportului este de <strong>{shippingCost} lei</strong>, tarif fix, indiferent de localitate. Acesta este afisat separat in formularul de comanda si inclus in totalul de plata.</p>
+          : <p>Transportul este gratuit pe teritoriul Romaniei.</p>}
 
         <h2>6. Dreptul de retragere</h2>
         <p>Conform OUG 34/2014, consumatorul beneficiaza de dreptul de retragere in termen de 14 zile de la primirea produsului, cu exceptia situatiilor prevazute la art. 16 (de ex. produse cu termen scurt de expirare desigilate).</p>

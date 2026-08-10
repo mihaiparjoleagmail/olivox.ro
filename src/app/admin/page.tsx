@@ -1113,6 +1113,8 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
   const [siteGravpoint, setSiteGravpoint] = useState(dc.gravpointApiUrl);
   const [siteIban, setSiteIban] = useState("");
   const [siteBanca, setSiteBanca] = useState("");
+  const [siteShipping, setSiteShipping] = useState(String(dc.shippingCost));
+  const [siteShippingLabel, setSiteShippingLabel] = useState(dc.shippingLabel);
   const [siteMetaTitle, setSiteMetaTitle] = useState(dc.metaTitle);
   const [siteMetaDesc, setSiteMetaDesc] = useState(dc.metaDescription);
 
@@ -1128,6 +1130,8 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
           if (sc.logoHtml) setSiteLogoHtml(sc.logoHtml);
           if (sc.productPrice) setSitePrice(String(sc.productPrice));
           if (sc.productionCost) setSiteCost(String(sc.productionCost));
+          if (sc.shippingCost != null) setSiteShipping(String(sc.shippingCost));
+          if (sc.shippingLabel) setSiteShippingLabel(sc.shippingLabel);
           if (sc.companyName) setCompanyName(sc.companyName);
           if (sc.companyCIF) setCompanyCIF(sc.companyCIF);
           if (sc.companyAddress) setCompanyAddress(sc.companyAddress);
@@ -1198,6 +1202,8 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
         site_config: {
           siteName, domain: siteDomain, tagline: siteTagline, logoHtml: siteLogoHtml,
           productPrice: Number(sitePrice), productionCost: Number(siteCost),
+          shippingCost: Math.max(0, Number(siteShipping) || 0),
+          shippingLabel: siteShippingLabel.trim() || dc.shippingLabel,
           companyName, companyCIF, companyAddress, companyCounty, companyLocality,
           phone: sitePhone, emailOrders: siteEmailOrders, emailFrom: siteEmailFrom, emailAdmin: siteEmailAdmin,
           gravpointApiUrl: siteGravpoint, iban: siteIban, banca: siteBanca, metaTitle: siteMetaTitle, metaDescription: siteMetaDesc,
@@ -1245,6 +1251,8 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
             <div className="admin-settings__grid">
               <div className="admin-settings__field"><label>Pret produs (RON)</label><input type="number" value={sitePrice} onChange={(e) => setSitePrice(e.target.value)} /></div>
               <div className="admin-settings__field"><label>Cost productie (RON)</label><input type="number" value={siteCost} onChange={(e) => setSiteCost(e.target.value)} /></div>
+              <div className="admin-settings__field"><label>Cost transport (RON)</label><input type="number" min={0} value={siteShipping} onChange={(e) => setSiteShipping(e.target.value)} placeholder="30" /><small>Se adauga la totalul fiecarei comenzi. 0 = livrare gratuita.</small></div>
+              <div className="admin-settings__field"><label>Nume transport (eticheta)</label><input type="text" value={siteShippingLabel} onChange={(e) => setSiteShippingLabel(e.target.value)} placeholder="Curier" /><small>Apare in formular, email si pe factura (ex: Curier, Curier Sameday, Livrare easybox).</small></div>
             </div>
           </div>
           <div className="admin-settings__section">

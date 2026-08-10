@@ -1,7 +1,8 @@
 import { supabase } from "@/lib/supabase";
 
 const BASE = "https://olivox.ro";
-const SHIPPING_FEE = 0; // Livrare gratuita in RO (per termeni)
+// Costul de transport vine din site_config (Admin -> Setari -> Preturi).
+import { getSiteConfig } from "@/lib/site-config";
 const BRAND = "Snep";
 const GOOGLE_CAT_SUPPLEMENTS = "2984"; // Vitamins & Supplements
 
@@ -101,11 +102,11 @@ function availability(p: FeedProduct): string {
   return p.stock_status === "out_of_stock" ? "out_of_stock" : "in_stock";
 }
 
-function shippingBlock(): string {
+function shippingBlock(fee: number): string {
   return `<g:shipping>
       <g:country>RO</g:country>
       <g:service>Standard</g:service>
-      <g:price>${SHIPPING_FEE.toFixed(2)} RON</g:price>
+      <g:price>${fee.toFixed(2)} RON</g:price>
     </g:shipping>`;
 }
 
@@ -127,7 +128,7 @@ function imagesBlock(p: FeedProduct): string {
   return `<g:image_link>${xmlEscape(primary)}</g:image_link>${extraTags ? "\n    " + extraTags : ""}`;
 }
 
-function googleItem(p: FeedProduct): string {
+function googleItem(p: FeedProduct, shippingFee: number): string {
   const url = buildProductUrl(p);
   const title = xmlEscape(buildTitle(p));
   const desc = xmlEscape(buildDescription(p));
@@ -149,13 +150,13 @@ function googleItem(p: FeedProduct): string {
     <g:identifier_exists>${identifierExists}</g:identifier_exists>
     <g:google_product_category>${GOOGLE_CAT_SUPPLEMENTS}</g:google_product_category>
     <g:product_type>${productType}</g:product_type>
-    ${shippingBlock()}
+    ${shippingBlock(shippingFee)}
     <g:custom_label_0>snep</g:custom_label_0>
     <g:custom_label_1>${xmlEscape(p.category_slugs?.[0] || "")}</g:custom_label_1>
   </item>`;
 }
 
-function facebookItem(p: FeedProduct): string {
+function facebookItem(p: FeedProduct, shippingFee: number): string {
   const url = buildProductUrl(p);
   const title = xmlEscape(buildTitle(p));
   const desc = xmlEscape(buildDescription(p));
@@ -174,7 +175,7 @@ function facebookItem(p: FeedProduct): string {
     <g:condition>new</g:condition>
     <g:google_product_category>${GOOGLE_CAT_SUPPLEMENTS}</g:google_product_category>
     <g:visibility>published</g:visibility>
-    ${shippingBlock()}
+    ${shippingBlock(shippingFee)}
   </item>`;
 }
 
@@ -205,6 +206,7 @@ function tiktokItem(p: FeedProduct): string {
 
 export async function buildFeed(platform: FeedPlatform): Promise<{ xml: string; stats: FeedStats }> {
   const products = await fetchAllProducts();
+  const shippingFee = Number((await getSiteConfig()).shippingCost) || 0;
   let items = 0;
   let skipped = 0;
   const parts: string[] = [];
@@ -215,8 +217,8 @@ export async function buildFeed(platform: FeedPlatform): Promise<{ xml: string; 
       skipped++;
       continue;
     }
-    if (platform === "google") parts.push(googleItem(p));
-    else if (platform === "facebook") parts.push(facebookItem(p));
+    if (platform === "google") parts.push(googleItem(p, shippingFee));
+    else if (platform === "facebook") parts.push(facebookItem(p, shippingFee));
     else parts.push(tiktokItem(p));
     items++;
   }

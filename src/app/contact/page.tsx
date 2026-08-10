@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+// Costul de transport / datele firmei vin din site_config — reimprospatam periodic.
+export const revalidate = 300;
+
 export default async function ContactPage() {
   const config = await getSiteConfig();
 
@@ -67,6 +70,11 @@ export default async function ContactPage() {
               <li><strong>3–5 zile lucratoare</strong> livrare in toata Romania</li>
               <li>Expediem prin curier rapid (Sameday) sau easybox</li>
               <li>Confirmam telefonic fiecare comanda inainte de expediere</li>
+              <li>
+                {config.shippingCost > 0
+                  ? `Transport ${config.shippingCost} lei, tarif fix, oriunde in Romania`
+                  : "Transport gratuit, oriunde in Romania"}
+              </li>
               <li>Plata: exclusiv online, prin transfer bancar, inainte de expediere (fara ramburs)</li>
             </ul>
           </div>
