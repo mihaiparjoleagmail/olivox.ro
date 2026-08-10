@@ -35,7 +35,9 @@ export default function TermeniPage() {
         <p>Dupa plasarea comenzii, clientul va primi o confirmare pe email (daca a furnizat adresa de email).</p>
 
         <h2>4. Preturi si plata</h2>
-        <p>Pretul produselor este cel afisat pe site la momentul plasarii comenzii. Plata se efectueaza ramburs, la livrare (cash sau card la curier).</p>
+        <p>Pretul produselor este cel afisat pe site la momentul plasarii comenzii.</p>
+        <p>Plata se efectueaza <strong>exclusiv online, in avans, prin transfer bancar</strong>. Nu acceptam plata ramburs (la livrare).</p>
+        <p>Dupa confirmarea telefonica a comenzii, clientul primeste pe email sau WhatsApp datele de plata (beneficiar, IBAN, suma totala si numarul comenzii). Comanda este expediata numai dupa ce plata este inregistrata in contul vanzatorului. Daca plata nu este efectuata in termen de 5 zile lucratoare de la confirmare, comanda poate fi anulata, fara alte obligatii pentru niciuna dintre parti.</p>
 
         <h2>5. Livrare</h2>
         <p>Comenzile sunt procesate in 1-2 zile lucratoare de la plasare. Livrarea se face prin curier, in 1-2 zile lucratoare suplimentare. Livrarea este gratuita pe teritoriul Romaniei.</p>

@@ -59,8 +59,10 @@ export async function POST(request: Request) {
     const sc = await getSiteConfig();
 
     // AWB body per documentatie FanCourier
-    const rambursValue = order.ramburs != null ? order.ramburs : (order.order_value || sc.productPrice || 0);
+    // Plata se face online, in avans — implicit fara ramburs. Se poate seta manual din admin.
+    const rambursValue = order.ramburs != null ? order.ramburs : 0;
     const isZeroRamburs = rambursValue === 0;
+    const declaredValue = order.order_value || sc.productPrice || 0;
 
     const awbBody = {
       clientId: Number(fc.client_id),
@@ -71,7 +73,7 @@ export async function POST(request: Request) {
             packages: { parcel: 1, envelope: 0 },
             weight: 0.3,
             ...(isZeroRamburs ? {} : { cod: rambursValue }),
-            declaredValue: rambursValue,
+            declaredValue,
             payment: "sender",
             ...(isZeroRamburs ? {} : { returnPayment: "sender" }),
             content: order.product_name || `Husa ${order.brand_name} ${order.model_name}`,

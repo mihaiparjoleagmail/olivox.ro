@@ -67,7 +67,7 @@ export default async function ContactPage() {
               <li><strong>3–5 zile lucratoare</strong> livrare in toata Romania</li>
               <li>Expediem prin curier rapid (Sameday) sau easybox</li>
               <li>Confirmam telefonic fiecare comanda inainte de expediere</li>
-              <li>Plata: ramburs la livrare sau transfer bancar</li>
+              <li>Plata: exclusiv online, prin transfer bancar, inainte de expediere (fara ramburs)</li>
             </ul>
           </div>
 

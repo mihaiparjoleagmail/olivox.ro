@@ -110,9 +110,11 @@ export async function POST(request: Request) {
   params.set("service", locker_id ? (sd.locker_service_id || sd.service_id || "") : (sd.service_id || ""));
   params.set("awbPayment", "1"); // CLIENT
   params.set("thirdPartyPickup", "0");
-  const rambursValue = order.ramburs != null ? order.ramburs : (order.order_value || sc.productPrice || 0);
+  // Plata se face online, in avans — implicit fara ramburs. Se poate seta manual din admin.
+  const rambursValue = order.ramburs != null ? order.ramburs : 0;
+  const declaredValue = order.order_value || sc.productPrice || 0;
   params.set("cashOnDelivery", String(rambursValue));
-  params.set("insuredValue", String(rambursValue));
+  params.set("insuredValue", String(declaredValue));
   params.set("awbRecipient[name]", order.customer_name);
   params.set("awbRecipient[phoneNumber]", order.customer_phone);
   params.set("awbRecipient[personType]", "0"); // persoana fizica

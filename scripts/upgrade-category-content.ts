@@ -62,7 +62,7 @@ type Block = {
 };
 
 const CLOSING_DEFAULT =
-  "Olivox este distribuitorul oficial Snep pentru Romania, cu un catalog complet de suplimente, cosmetice si solutii pentru casa. Livrare in 3-5 zile lucratoare oriunde in tara, plata la livrare sau online, produse in ambalaje sigilate de producator si o echipa de suport care raspunde prompt la intrebarile tale despre ingrediente, utilizare sau comenzi mai mari. Alegi calitate italiana verificata, comanzi simplu, primesti rapid.";
+  "Olivox este distribuitorul oficial Snep pentru Romania, cu un catalog complet de suplimente, cosmetice si solutii pentru casa. Livrare in 3-5 zile lucratoare oriunde in tara, plata online prin transfer bancar, produse in ambalaje sigilate de producator si o echipa de suport care raspunde prompt la intrebarile tale despre ingrediente, utilizare sau comenzi mai mari. Alegi calitate italiana verificata, comanzi simplu, primesti rapid.";
 
 // ---------- helpers ----------
 function clean(name: string) {

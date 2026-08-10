@@ -114,8 +114,24 @@ export async function sendClientEmail(data: OrderEmailData) {
         ${data.order_value ? `<tr><td>Total</td><td>${data.order_value} RON</td></tr>` : ""}
         <tr><td>Livrare la</td><td>${data.address}</td></tr>
       </table>
+      <div style="border:1px solid #e5e7eb;border-left:4px solid #1a6b3a;border-radius:8px;padding:16px 18px;margin-bottom:20px;background:#f9fafb">
+        <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1a6b3a">Plata se face exclusiv online, prin transfer bancar</p>
+        <p style="margin:0 0 10px;font-size:13px;color:#374151;line-height:1.5">
+          Nu livram cu plata ramburs — coletul se expediaza dupa ce plata este inregistrata in cont.
+          ${config.iban
+            ? `Poti face transferul cu datele de mai jos, mentionand la detaliile platii <strong>comanda #${data.order_id}</strong>:`
+            : `Datele de plata ti le trimitem la confirmarea telefonica a comenzii.`}
+        </p>
+        ${config.iban ? `
+        <table style="margin:0">
+          ${config.companyName ? `<tr><td>Beneficiar</td><td>${config.companyName}</td></tr>` : ""}
+          <tr><td>IBAN</td><td><strong>${config.iban}</strong></td></tr>
+          ${config.banca ? `<tr><td>Banca</td><td>${config.banca}</td></tr>` : ""}
+          <tr><td>Detalii plata</td><td>Comanda #${data.order_id}</td></tr>
+        </table>` : ""}
+      </div>
       <p style="font-size:14px;color:#374151">
-        Te vom contacta in scurt timp pentru confirmare. Poti sa ne scrii si pe
+        Te vom contacta in scurt timp pentru confirmare (produse, adresa si costul total, inclusiv transportul). Poti sa ne scrii si pe
         <a href="https://wa.me/${config.phone.replace(/^0/, "40")}" style="color:#25D366;font-weight:700">WhatsApp</a>
         sau sa suni la <a href="tel:${config.phone}" style="color:#1a6b3a;font-weight:600">${config.phone}</a>.
       </p>

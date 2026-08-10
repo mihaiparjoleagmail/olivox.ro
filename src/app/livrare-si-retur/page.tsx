@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 export const metadata: Metadata = {
   title: "Livrare si retur — 3-5 zile lucratoare | Olivox",
   description:
-    "Livrare in 3-5 zile lucratoare prin curier in toata Romania. Drept de retur 14 zile conform OUG 34/2014. Informatii complete despre transport si returnare.",
+    "Livrare in 3-5 zile lucratoare prin curier in toata Romania. Plata exclusiv online, prin transfer bancar, inainte de expediere — fara ramburs. Drept de retur 14 zile conform OUG 34/2014.",
   alternates: { canonical: "https://olivox.ro/livrare-si-retur" },
   openGraph: {
     title: "Livrare si retur — 3-5 zile lucratoare",
@@ -24,8 +24,9 @@ export default function LivrareReturPage() {
           <div className="eyebrow">Logistica</div>
           <h1>Livrare si retur</h1>
           <p className="lead">
-            Livram in toata Romania in 3-5 zile lucratoare. Ai drept de retragere de 14 zile calendaristice,
-            conform OUG 34/2014.
+            Livram in toata Romania in 3-5 zile lucratoare. Plata se face exclusiv online, prin transfer bancar,
+            dupa confirmarea comenzii — nu expediem cu plata ramburs. Ai drept de retragere de 14 zile
+            calendaristice, conform OUG 34/2014.
           </p>
         </header>
 
@@ -35,7 +36,7 @@ export default function LivrareReturPage() {
             <li><strong>Termen:</strong> 3-5 zile lucratoare de la confirmarea telefonica a comenzii.</li>
             <li><strong>Acoperire:</strong> toata Romania, prin curier (FanCourier sau Sameday).</li>
             <li><strong>Cost:</strong> afisat la finalul formularului, in functie de localitate si greutate.</li>
-            <li><strong>Plata:</strong> ramburs (cash sau card la curier).</li>
+            <li><strong>Plata:</strong> exclusiv online, in avans, prin transfer bancar. Nu livram cu plata ramburs.</li>
             <li><strong>Tracking:</strong> primesti codul AWB pe email sau SMS cand coletul pleaca.</li>
           </ul>
         </section>
@@ -45,6 +46,24 @@ export default function LivrareReturPage() {
           <p>
             Dupa plasarea comenzii prin formular, un operator te va contacta telefonic in cateva ore lucratoare
             pentru confirmare. Acolo verificam adresa, produsele si eventuale intrebari.
+          </p>
+        </section>
+
+        <section>
+          <h2>Plata — exclusiv online, inainte de expediere</h2>
+          <p>
+            <strong>Nu lucram cu plata ramburs.</strong> Plata se face integral online, prin transfer bancar,
+            dupa confirmarea comenzii.
+          </p>
+          <ol className="bullets">
+            <li>Plasezi comanda prin formularul de pe pagina produsului.</li>
+            <li>Te contactam telefonic si confirmam produsele, adresa si costul total (produse + transport).</li>
+            <li>Primesti pe email sau WhatsApp datele de plata: IBAN-ul, beneficiarul si numarul comenzii, pe care il treci la detaliile platii.</li>
+            <li>Dupa ce plata este inregistrata in cont, pregatim coletul si il predam curierului. Primesti codul AWB pe email sau SMS.</li>
+          </ol>
+          <p>
+            Daca nu vrei sa platesti in avans sau ai intrebari despre acest proces, suna-ne inainte de a plasa
+            comanda si discutam. Nu se face nicio plata catre curier, la livrare.
           </p>
         </section>
 
@@ -60,7 +79,7 @@ export default function LivrareReturPage() {
             <li>Scrie-ne la <a href="mailto:comenzi@olivox.ro">comenzi@olivox.ro</a> cu numarul comenzii si produsele returnate.</li>
             <li>Ambaleaza produsele in starea originala, sigilate, nedesfacute, impreuna cu factura.</li>
             <li>Trimite coletul prin curier la adresa pe care ti-o comunicam. Costul returului este suportat de client, conform legii.</li>
-            <li>Dupa primirea si verificarea coletului, iti returnam contravaloarea produselor in maxim 14 zile, folosind aceeasi metoda de plata.</li>
+            <li>Dupa primirea si verificarea coletului, iti returnam contravaloarea produselor in maxim 14 zile, prin transfer bancar, in contul din care s-a facut plata.</li>
           </ol>
           <h3>Exceptii de la dreptul de retur</h3>
           <p>

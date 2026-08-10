@@ -109,8 +109,8 @@ function genericBuilder(
 
   body.push(
     `<p>Toate produsele din categoria <strong>${cat.name.toLowerCase()}</strong> sunt livrate direct ` +
-    `din stocul Olivox, in ambalaje sigilate de producator. ${SHIP}, cu posibilitate de plata la livrare ` +
-    `sau online. Pentru intrebari despre compozitie, utilizare sau comenzi mai mari, ne poti contacta ` +
+    `din stocul Olivox, in ambalaje sigilate de producator. ${SHIP}, cu plata online prin transfer ` +
+    `bancar. Pentru intrebari despre compozitie, utilizare sau comenzi mai mari, ne poti contacta ` +
     `oricand — suntem aici sa te ajutam sa descoperi ce inseamna cu adevarat calitatea italiana Snep.</p>`
   );
 

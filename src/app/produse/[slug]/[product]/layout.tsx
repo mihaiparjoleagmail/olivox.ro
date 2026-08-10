@@ -99,6 +99,8 @@ export default async function ProductLayout({ params, children }: Props) {
         : "https://schema.org/OutOfStock",
       itemCondition: "https://schema.org/NewCondition",
       seller: { "@type": "Organization", name: "olivox.ro" },
+      // Plata se face exclusiv online, in avans (transfer bancar). Fara ramburs.
+      acceptedPaymentMethod: "http://purl.org/goodrelations/v1#ByBankTransferInAdvance",
       shippingDetails: {
         "@type": "OfferShippingDetails",
         shippingRate: { "@type": "MonetaryAmount", value: "0", currency: "RON" },
@@ -135,7 +137,7 @@ export default async function ProductLayout({ params, children }: Props) {
         acceptedAnswer: {
           "@type": "Answer",
           text:
-            "Livrarea se face prin curier rapid, in 3-5 zile lucratoare de la confirmarea comenzii, in toata Romania. Plata se poate face ramburs sau prin transfer bancar.",
+            "Livrarea se face prin curier rapid, in 3-5 zile lucratoare de la confirmarea comenzii, in toata Romania. Plata se face exclusiv online, prin transfer bancar, inainte de expediere — nu livram cu plata ramburs.",
         },
       },
       {

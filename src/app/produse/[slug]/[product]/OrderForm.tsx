@@ -212,6 +212,11 @@ export default function OrderForm({ product }: { product: OrderFormProduct }) {
       <div className="pd-success">
         <h3>Multumim pentru comanda!</h3>
         <p>Te contactam in cel mai scurt timp pentru confirmare.</p>
+        <p>
+          Plata se face exclusiv online, prin transfer bancar. La confirmare primesti datele de plata
+          (IBAN, beneficiar, numarul comenzii), iar coletul pleaca imediat ce plata intra in cont.
+          Nu se plateste nimic la curier.
+        </p>
       </div>
     );
   }
@@ -286,7 +291,7 @@ export default function OrderForm({ product }: { product: OrderFormProduct }) {
         lineHeight: "1.45",
         textAlign: "center",
       }}>
-        ⚠️ Comenzile se expediază doar după confirmarea plății online. Veți fi contactat imediat după plasarea comenzii.
+        ⚠️ Plata se face exclusiv online, prin transfer bancar — nu livrăm cu plata ramburs. Vă contactăm imediat după plasarea comenzii, iar coletul se expediază după confirmarea plății.
       </p>
     </form>
   );

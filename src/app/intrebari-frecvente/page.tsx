@@ -16,7 +16,7 @@ const faqs: { q: string; a: string }[] = [
   },
   {
     q: "Cum platesc comanda?",
-    a: "Plata se face ramburs la curier — cash sau card. Pentru comenzi mai mari oferim la cerere plata prin OP bancar.",
+    a: "Plata se face exclusiv online, in avans, prin transfer bancar. Nu lucram cu plata ramburs. Dupa ce confirmam telefonic comanda, primesti pe email sau WhatsApp datele de plata (IBAN, beneficiar, numarul comenzii), iar coletul pleaca imediat ce plata intra in cont.",
   },
   {
     q: "Pot returna produsele?",
