@@ -130,8 +130,9 @@ export async function POST(request: Request) {
     const siteName = siteConfig.siteName || siteConfig.domain || "olivox.ro";
 
     // order_value include transportul. Il facturam pe linie separata, cat timp
-    // ramane loc pentru produse (comenzi vechi, fara transport, raman neatinse).
-    const shipping = Number(siteConfig.shippingCost) || 0;
+    // ramane loc pentru produse. Comenzile vechi (fara shipping_cost salvat)
+    // raman pe o singura linie, ca inainte.
+    const shipping = Number(order.shipping_cost) || 0;
     const hasShippingLine = shipping > 0 && orderValue > shipping;
     const productsValue = hasShippingLine ? orderValue - shipping : orderValue;
 

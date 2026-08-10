@@ -13,6 +13,8 @@ export interface Order {
   observations: string;
   status: string;
   order_value?: number;
+  /** Transportul inclus in order_value. */
+  shipping_cost?: number;
   shipping_method?: string;
   locker_id?: string | null;
   order_source?: string;
@@ -31,6 +33,7 @@ export async function createOrder(order: {
   address: string;
   observations: string;
   order_value?: number;
+  shipping_cost?: number;
   shipping_method?: string;
   locker_id?: string | null;
   order_source?: string;
@@ -42,8 +45,25 @@ export async function createOrder(order: {
     .select()
     .single();
 
-  if (error) throw error;
-  return data;
+  if (!error) return data;
+
+  // Migrarea scripts/sql/add-shipping-cost.sql nu a fost inca rulata: salvam
+  // comanda fara coloana noua, ca sa nu pierdem comenzi din cauza schemei.
+  const missingColumn = /shipping_cost/i.test(error.message || "") || error.code === "PGRST204" || error.code === "42703";
+  if (missingColumn && order.shipping_cost != null) {
+    console.error("orders.shipping_cost lipseste — ruleaza scripts/sql/add-shipping-cost.sql");
+    const { shipping_cost: _omit, ...withoutShipping } = order;
+    void _omit;
+    const retry = await supabase
+      .from("orders")
+      .insert({ ...withoutShipping, status: "in procesare" })
+      .select()
+      .single();
+    if (retry.error) throw retry.error;
+    return retry.data;
+  }
+
+  throw error;
 }
 
 export async function getOrders(): Promise<Order[]> {

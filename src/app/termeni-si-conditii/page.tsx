@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import Footer from "@/components/Footer";
-import { getSiteConfig } from "@/lib/site-config";
+import { getSiteConfig, describeTiers } from "@/lib/site-config";
 
 export const metadata: Metadata = {
   title: "Termeni si Conditii | olivox.ro",
@@ -13,7 +13,8 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function TermeniPage() {
-  const { shippingCost } = await getSiteConfig();
+  const { shippingCost, shippingTiers } = await getSiteConfig();
+  const shippingText = describeTiers(shippingTiers, shippingCost);
 
   return (
     <div className="page-wrapper">
@@ -47,9 +48,7 @@ export default async function TermeniPage() {
 
         <h2>5. Livrare</h2>
         <p>Comenzile sunt procesate in 1-2 zile lucratoare de la confirmarea platii. Livrarea se face prin curier, in 3-5 zile lucratoare, pe teritoriul Romaniei.</p>
-        {shippingCost > 0
-          ? <p>Costul transportului este de <strong>{shippingCost} lei</strong>, tarif fix, indiferent de localitate. Acesta este afisat separat in formularul de comanda si inclus in totalul de plata.</p>
-          : <p>Transportul este gratuit pe teritoriul Romaniei.</p>}
+        <p>Costul transportului se stabileste in functie de valoarea produselor comandate: <strong>{shippingText}</strong>. Costul este afisat separat in formularul de comanda, inainte de trimiterea acesteia, si este inclus in totalul de plata.</p>
 
         <h2>6. Dreptul de retragere</h2>
         <p>Conform OUG 34/2014, consumatorul beneficiaza de dreptul de retragere in termen de 14 zile de la primirea produsului, cu exceptia situatiilor prevazute la art. 16 (de ex. produse cu termen scurt de expirare desigilate).</p>

@@ -45,6 +45,7 @@ interface Order {
   fgo_link?: string;
   custom_field_values?: Record<string, CustomFieldValue>;
   order_value?: number;
+  shipping_cost?: number;
   locker_id?: number | null;
   created_at: string;
 }
@@ -1115,6 +1116,9 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
   const [siteBanca, setSiteBanca] = useState("");
   const [siteShipping, setSiteShipping] = useState(String(dc.shippingCost));
   const [siteShippingLabel, setSiteShippingLabel] = useState(dc.shippingLabel);
+  const [siteShippingTiers, setSiteShippingTiers] = useState<{ minValue: string; cost: string }[]>(
+    dc.shippingTiers.map((t) => ({ minValue: String(t.minValue), cost: String(t.cost) }))
+  );
   const [siteMetaTitle, setSiteMetaTitle] = useState(dc.metaTitle);
   const [siteMetaDesc, setSiteMetaDesc] = useState(dc.metaDescription);
 
@@ -1132,6 +1136,12 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
           if (sc.productionCost) setSiteCost(String(sc.productionCost));
           if (sc.shippingCost != null) setSiteShipping(String(sc.shippingCost));
           if (sc.shippingLabel) setSiteShippingLabel(sc.shippingLabel);
+          if (Array.isArray(sc.shippingTiers)) {
+            setSiteShippingTiers(sc.shippingTiers.map((t: { minValue: number; cost: number }) => ({
+              minValue: String(t.minValue ?? 0),
+              cost: String(t.cost ?? 0),
+            })));
+          }
           if (sc.companyName) setCompanyName(sc.companyName);
           if (sc.companyCIF) setCompanyCIF(sc.companyCIF);
           if (sc.companyAddress) setCompanyAddress(sc.companyAddress);
@@ -1204,6 +1214,9 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
           productPrice: Number(sitePrice), productionCost: Number(siteCost),
           shippingCost: Math.max(0, Number(siteShipping) || 0),
           shippingLabel: siteShippingLabel.trim() || dc.shippingLabel,
+          shippingTiers: siteShippingTiers
+            .map((t) => ({ minValue: Math.max(0, Number(t.minValue) || 0), cost: Math.max(0, Number(t.cost) || 0) }))
+            .sort((a, b) => a.minValue - b.minValue),
           companyName, companyCIF, companyAddress, companyCounty, companyLocality,
           phone: sitePhone, emailOrders: siteEmailOrders, emailFrom: siteEmailFrom, emailAdmin: siteEmailAdmin,
           gravpointApiUrl: siteGravpoint, iban: siteIban, banca: siteBanca, metaTitle: siteMetaTitle, metaDescription: siteMetaDesc,
@@ -1251,9 +1264,56 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
             <div className="admin-settings__grid">
               <div className="admin-settings__field"><label>Pret produs (RON)</label><input type="number" value={sitePrice} onChange={(e) => setSitePrice(e.target.value)} /></div>
               <div className="admin-settings__field"><label>Cost productie (RON)</label><input type="number" value={siteCost} onChange={(e) => setSiteCost(e.target.value)} /></div>
-              <div className="admin-settings__field"><label>Cost transport (RON)</label><input type="number" min={0} value={siteShipping} onChange={(e) => setSiteShipping(e.target.value)} placeholder="30" /><small>Se adauga la totalul fiecarei comenzi. 0 = livrare gratuita.</small></div>
+              <div className="admin-settings__field"><label>Cost transport implicit (RON)</label><input type="number" min={0} value={siteShipping} onChange={(e) => setSiteShipping(e.target.value)} placeholder="30" /><small>Se foloseste doar daca nu se potriveste nicio plaja de mai jos. 0 = gratuit.</small></div>
               <div className="admin-settings__field"><label>Nume transport (eticheta)</label><input type="text" value={siteShippingLabel} onChange={(e) => setSiteShippingLabel(e.target.value)} placeholder="Curier" /><small>Apare in formular, email si pe factura (ex: Curier, Curier Sameday, Livrare easybox).</small></div>
             </div>
+          </div>
+          <div className="admin-settings__section">
+            <h3>Plaje transport</h3>
+            <p className="admin-settings__desc">
+              Costul se alege dupa valoarea produselor (fara transport): se aplica plaja cu cel mai mare prag
+              atins. Exemplu: „de la 0 &rarr; 60 lei" si „de la 150 &rarr; 30 lei" inseamna 60 lei sub 150 lei
+              si 30 lei de la 150 lei in sus.
+            </p>
+            {siteShippingTiers.length === 0 && (
+              <p className="admin-settings__desc">Nicio plaja — se foloseste costul implicit de mai sus.</p>
+            )}
+            {siteShippingTiers.map((tier, i) => (
+              <div key={i} className="admin-tier-row">
+                <div className="admin-settings__field">
+                  <label>De la (RON)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={tier.minValue}
+                    onChange={(e) => setSiteShippingTiers(siteShippingTiers.map((t, j) => (j === i ? { ...t, minValue: e.target.value } : t)))}
+                  />
+                </div>
+                <div className="admin-settings__field">
+                  <label>{siteShippingLabel || "Transport"} (RON)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={tier.cost}
+                    onChange={(e) => setSiteShippingTiers(siteShippingTiers.map((t, j) => (j === i ? { ...t, cost: e.target.value } : t)))}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="admin-tier-row__del"
+                  onClick={() => setSiteShippingTiers(siteShippingTiers.filter((_, j) => j !== i))}
+                >
+                  Sterge
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="admin-inline-btn"
+              onClick={() => setSiteShippingTiers([...siteShippingTiers, { minValue: "0", cost: "0" }])}
+            >
+              + Adauga plaja
+            </button>
           </div>
           <div className="admin-settings__section">
             <h3>Date firma</h3>
@@ -2812,7 +2872,7 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
           {judetName && <tr><td>Județ</td><td>{judetName}</td></tr>}
           {localitateVal && <tr><td>Localitate</td><td>{localitateVal}</td></tr>}
           <tr><td>Adresa</td><td>{order.address}</td></tr>
-          <tr><td>Valoare</td><td><strong style={{ color: "var(--color-accent)" }}>{order.order_value || 0} RON</strong></td></tr>
+          <tr><td>Valoare</td><td><strong style={{ color: "var(--color-accent)" }}>{order.order_value || 0} RON</strong>{order.shipping_cost ? <span style={{ color: "var(--color-text-muted)", fontSize: "0.75rem" }}> (din care {order.shipping_cost} RON transport)</span> : null}</td></tr>
           {order.observations && <tr><td>Obs</td><td>{order.observations}</td></tr>}
           {order.custom_field_values && Object.entries(order.custom_field_values).map(([key, cf]) => (
             <tr key={key}><td>{cf.label}</td><td>

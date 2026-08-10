@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getSiteConfig } from "@/lib/site-config";
+import { getSiteConfig, describeTiers } from "@/lib/site-config";
 
 export const metadata: Metadata = {
   title: "Intrebari frecvente (FAQ) — Olivox",
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://olivox.ro/intrebari-frecvente" },
 };
 
-function buildFaqs(shippingCost: number): { q: string; a: string }[] { return [
+function buildFaqs(shippingText: string): { q: string; a: string }[] { return [
   {
     q: "In cat timp primesc coletul?",
     a: "Livrarea se face in 3-5 zile lucratoare de la confirmarea telefonica a comenzii, prin curier, in toata Romania.",
@@ -21,9 +21,7 @@ function buildFaqs(shippingCost: number): { q: string; a: string }[] { return [
   },
   {
     q: "Cat costa transportul?",
-    a: shippingCost > 0
-      ? `Transportul costa ${shippingCost} lei, tarif fix, oriunde in Romania. Suma apare separat in formularul de comanda si este inclusa in totalul de plata, alaturi de valoarea produselor.`
-      : "Transportul este gratuit, oriunde in Romania.",
+    a: `Costul curierului depinde de valoarea produselor din comanda: ${shippingText}. Suma apare separat in formularul de comanda, inainte sa o trimiti, si este inclusa in totalul de plata.`,
   },
   {
     q: "Pot returna produsele?",
@@ -84,8 +82,8 @@ function buildFaqs(shippingCost: number): { q: string; a: string }[] { return [
 export const revalidate = 300;
 
 export default async function FaqPage() {
-  const { shippingCost } = await getSiteConfig();
-  const faqs = buildFaqs(shippingCost);
+  const { shippingCost, shippingTiers } = await getSiteConfig();
+  const faqs = buildFaqs(describeTiers(shippingTiers, shippingCost));
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",

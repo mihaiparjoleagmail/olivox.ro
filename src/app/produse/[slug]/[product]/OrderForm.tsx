@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { trackEvent } from "@/lib/analytics";
+import { resolveShippingCost, type ShippingTier } from "@/lib/shipping";
 
 interface BeaconPayload {
   customer_name: string;
@@ -27,11 +28,14 @@ export interface OrderFormProduct {
 export default function OrderForm({
   product,
   shippingCost = 0,
+  shippingTiers = [],
   shippingLabel = "Curier",
 }: {
   product: OrderFormProduct;
-  /** Cost fix de livrare, adaugat la total. 0 = livrare gratuita. */
+  /** Cost de livrare folosit cand nu se potriveste nicio plaja. */
   shippingCost?: number;
+  /** Plaje de transport in functie de valoarea produselor, din Admin -> Setari. */
+  shippingTiers?: ShippingTier[];
   /** Eticheta liniei de transport, din Admin -> Setari. */
   shippingLabel?: string;
 }) {
@@ -58,7 +62,11 @@ export default function OrderForm({
 
   const currency = product.currency;
   const inStock = product.inStock;
-  const shipping = Math.max(0, Number(shippingCost) || 0);
+  // Transportul depinde de valoarea produselor, deci se recalculeaza la fiecare
+  // schimbare de cantitate. Aceeasi regula ruleaza si pe server, la salvare.
+  const productsTotal = Math.ceil((Number(product.price) || 0) * Number(quantity));
+  const shipping = resolveShippingCost(productsTotal, { shippingCost, shippingTiers });
+  const total = productsTotal + shipping;
 
   useEffect(() => {
     trackEvent("view_item", {
@@ -159,13 +167,10 @@ export default function OrderForm({
         unit_price: Number(product.price) || 0,
         currency,
         shipping_cost: shipping,
-        total: Math.ceil((Number(product.price) || 0) * Number(quantity)) + shipping,
+        total,
       },
     } : null,
   };
-
-  const productsTotal = Math.ceil((Number(product.price) || 0) * Number(quantity));
-  const total = productsTotal + shipping;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,6 +190,8 @@ export default function OrderForm({
           customer_email: customerEmail,
           address: combinedAddress,
           observations,
+          // Serverul recalculeaza transportul din setari; le trimitem doar ca fallback.
+          products_value: productsTotal,
           shipping_cost: shipping,
           // Totalul pe care il plateste clientul prin transfer: produse + transport.
           order_value: total,

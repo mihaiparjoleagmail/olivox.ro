@@ -88,7 +88,7 @@ export default async function ProductPage({ params }: Props) {
   const categories = product.category_slugs || [];
   const needsDisclaimer = categories.some((c) => SUPPLEMENT_CATEGORIES.has(c));
   const related = await getRelatedProducts(categorySlug, product.slug);
-  const { shippingCost, shippingLabel } = await getSiteConfig();
+  const { shippingCost, shippingTiers, shippingLabel } = await getSiteConfig();
   const pillar = PILLAR_GUIDES.find(
     (p) => p.match.test(product.slug) || p.match.test(product.name)
   );
@@ -144,6 +144,7 @@ export default async function ProductPage({ params }: Props) {
           inStock,
         }}
         shippingCost={shippingCost}
+        shippingTiers={shippingTiers}
         shippingLabel={shippingLabel}
       />
 

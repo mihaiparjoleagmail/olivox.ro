@@ -537,6 +537,45 @@
   border-color: var(--color-accent);
 }
 
+.admin-settings__field small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--color-text-muted);
+}
+
+/* Plaje de transport */
+.admin-tier-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 10px;
+  max-width: 460px;
+}
+
+.admin-tier-row .admin-settings__field {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-tier-row__del {
+  height: 38px;
+  padding: 0 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: #dc2626;
+  font-family: var(--font);
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-tier-row__del:hover {
+  border-color: #dc2626;
+}
+
 /* Client history */
 .client-history {
   display: flex;

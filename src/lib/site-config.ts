@@ -1,4 +1,9 @@
 // Default site config — overridden by Supabase settings.site_config
+import { normalizeTiers, type ShippingTier } from "./shipping";
+
+export { normalizeTiers, resolveShippingCost, describeTiers } from "./shipping";
+export type { ShippingTier } from "./shipping";
+
 export interface SiteConfig {
   siteName: string;
   domain: string;
@@ -8,8 +13,10 @@ export interface SiteConfig {
   currency: string;
   productPrice?: number;
   productionCost?: number;
-  /** Cost fix de livrare, adaugat la totalul comenzii. 0 = livrare gratuita. */
+  /** Cost de livrare folosit cand nu exista plaje configurate. 0 = livrare gratuita. */
   shippingCost: number;
+  /** Plaje de transport in functie de valoarea produselor, sortate crescator dupa minValue. */
+  shippingTiers: ShippingTier[];
   /** Eticheta afisata clientului pentru linia de transport (ex: "Curier", "Curier Sameday"). */
   shippingLabel: string;
   gravpointApiUrl?: string;
@@ -42,6 +49,10 @@ export const DEFAULT_CONFIG: SiteConfig = {
   productPrice: 0,
   productionCost: 0,
   shippingCost: 30,
+  shippingTiers: [
+    { minValue: 0, cost: 60 },
+    { minValue: 150, cost: 30 },
+  ],
   shippingLabel: "Curier",
 
   companyName: "OLIVOX SRL",
@@ -79,6 +90,7 @@ export async function getSiteConfig(): Promise<SiteConfig> {
       const ship = Number(merged.shippingCost);
       merged.shippingCost = Number.isFinite(ship) && ship >= 0 ? ship : DEFAULT_CONFIG.shippingCost;
       merged.shippingLabel = (merged.shippingLabel || "").trim() || DEFAULT_CONFIG.shippingLabel;
+      merged.shippingTiers = normalizeTiers(merged.shippingTiers);
       cachedConfig = merged;
       cacheTime = Date.now();
       return merged;

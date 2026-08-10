@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
-import { getSiteConfig } from "@/lib/site-config";
+import { getSiteConfig, describeTiers, normalizeTiers } from "@/lib/site-config";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
@@ -20,7 +20,8 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function LivrareReturPage() {
-  const { shippingCost, shippingLabel } = await getSiteConfig();
+  const { shippingCost, shippingTiers, shippingLabel } = await getSiteConfig();
+  const tiers = normalizeTiers(shippingTiers);
 
   return (
     <div className="page-wrapper">
@@ -42,13 +43,33 @@ export default async function LivrareReturPage() {
             <li><strong>Termen:</strong> 3-5 zile lucratoare de la confirmarea telefonica a comenzii.</li>
             <li><strong>Acoperire:</strong> toata Romania, prin curier (FanCourier sau Sameday).</li>
             <li><strong>Cost transport ({shippingLabel.toLowerCase()}):</strong>{" "}
-              {shippingCost > 0
-                ? `${shippingCost} lei, tarif fix, oriunde in Romania — se adauga automat la totalul din formular.`
-                : "gratuit, oriunde in Romania."}</li>
+              {describeTiers(tiers, shippingCost)}, oriunde in Romania — se adauga automat la totalul din formular.</li>
             <li><strong>Plata:</strong> exclusiv online, in avans, prin transfer bancar. Nu livram cu plata ramburs.</li>
             <li><strong>Tracking:</strong> primesti codul AWB pe email sau SMS cand coletul pleaca.</li>
           </ul>
         </section>
+
+        {tiers.length > 1 && (
+          <section>
+            <h2>Cat costa transportul</h2>
+            <p>
+              Costul curierului depinde de valoarea produselor din comanda (fara transport). Suma exacta o vezi
+              in formular, inainte sa trimiti comanda.
+            </p>
+            <ul className="bullets">
+              {tiers.map((tier, i) => {
+                const next = tiers[i + 1];
+                const price = tier.cost > 0 ? `${tier.cost} lei` : "gratuit";
+                const range = next
+                  ? tier.minValue > 0
+                    ? `comenzi intre ${tier.minValue} si ${next.minValue} lei`
+                    : `comenzi sub ${next.minValue} lei`
+                  : `comenzi de la ${tier.minValue} lei in sus`;
+                return <li key={tier.minValue}><strong>{price}</strong> — {range}</li>;
+              })}
+            </ul>
+          </section>
+        )}
 
         <section>
           <h2>Confirmare comanda</h2>

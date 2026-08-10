@@ -43,7 +43,7 @@ export async function PATCH(request: Request) {
     }
     // Full update
     const update: Record<string, unknown> = {};
-    for (const key of ["status", "customer_name", "customer_phone", "customer_email", "address", "product_name", "product_slug", "quantity", "observations", "custom_field_values", "order_value", "locker_id", "shipping_method", "awb_number", "awb_status", "fan_awb", "fan_status", "sd_awb", "sd_status", "eb_awb", "eb_status", "ramburs", "fgo_serie", "fgo_numar", "fgo_link"]) {
+    for (const key of ["status", "customer_name", "customer_phone", "customer_email", "address", "product_name", "product_slug", "quantity", "observations", "custom_field_values", "order_value", "shipping_cost", "locker_id", "shipping_method", "awb_number", "awb_status", "fan_awb", "fan_status", "sd_awb", "sd_status", "eb_awb", "eb_status", "ramburs", "fgo_serie", "fgo_numar", "fgo_link"]) {
       if (fields[key] !== undefined) update[key] = fields[key];
     }
     const { data, error: err } = await supabase.from("orders").update(update).eq("id", id).select().single();

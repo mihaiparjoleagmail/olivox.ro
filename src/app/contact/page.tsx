@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getSiteConfig } from "@/lib/site-config";
+import { getSiteConfig, describeTiers } from "@/lib/site-config";
 
 export const metadata: Metadata = {
   title: "Contact | olivox.ro",
@@ -70,11 +70,7 @@ export default async function ContactPage() {
               <li><strong>3–5 zile lucratoare</strong> livrare in toata Romania</li>
               <li>Expediem prin curier rapid (Sameday) sau easybox</li>
               <li>Confirmam telefonic fiecare comanda inainte de expediere</li>
-              <li>
-                {config.shippingCost > 0
-                  ? `Transport ${config.shippingCost} lei, tarif fix, oriunde in Romania`
-                  : "Transport gratuit, oriunde in Romania"}
-              </li>
+              <li>Transport: {describeTiers(config.shippingTiers, config.shippingCost)}</li>
               <li>Plata: exclusiv online, prin transfer bancar, inainte de expediere (fara ramburs)</li>
             </ul>
           </div>

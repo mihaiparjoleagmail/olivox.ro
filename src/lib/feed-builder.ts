@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase";
 
 const BASE = "https://olivox.ro";
 // Costul de transport vine din site_config (Admin -> Setari -> Preturi).
-import { getSiteConfig } from "@/lib/site-config";
+import { getSiteConfig, resolveShippingCost } from "@/lib/site-config";
 const BRAND = "Snep";
 const GOOGLE_CAT_SUPPLEMENTS = "2984"; // Vitamins & Supplements
 
@@ -206,7 +206,7 @@ function tiktokItem(p: FeedProduct): string {
 
 export async function buildFeed(platform: FeedPlatform): Promise<{ xml: string; stats: FeedStats }> {
   const products = await fetchAllProducts();
-  const shippingFee = Number((await getSiteConfig()).shippingCost) || 0;
+  const config = await getSiteConfig();
   let items = 0;
   let skipped = 0;
   const parts: string[] = [];
@@ -217,6 +217,7 @@ export async function buildFeed(platform: FeedPlatform): Promise<{ xml: string; 
       skipped++;
       continue;
     }
+    const shippingFee = resolveShippingCost(Number(p.price) || 0, config);
     if (platform === "google") parts.push(googleItem(p, shippingFee));
     else if (platform === "facebook") parts.push(facebookItem(p, shippingFee));
     else parts.push(tiktokItem(p));

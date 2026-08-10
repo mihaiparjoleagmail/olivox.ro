@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getProduct, getCategoryName, stripHtml, truncate } from "./product-data";
-import { getSiteConfig } from "@/lib/site-config";
+import { getSiteConfig, resolveShippingCost, describeTiers } from "@/lib/site-config";
 
 interface Props {
   params: Promise<{ slug: string; product: string }>;
@@ -63,7 +63,10 @@ export default async function ProductLayout({ params, children }: Props) {
   const image = product.r2_image_url || product.image_url || "";
   const currency = product.currency || "RON";
   const inStock = product.stock_status !== "out_of_stock";
-  const { shippingCost } = await getSiteConfig();
+  const config = await getSiteConfig();
+  // Rata din schema = transportul pentru o bucata din acest produs.
+  const shippingCost = resolveShippingCost(Number(product.price) || 0, config);
+  const shippingText = describeTiers(config.shippingTiers, config.shippingCost);
 
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
@@ -139,7 +142,7 @@ export default async function ProductLayout({ params, children }: Props) {
         acceptedAnswer: {
           "@type": "Answer",
           text:
-            `Livrarea se face prin curier rapid, in 3-5 zile lucratoare de la confirmarea comenzii, in toata Romania. ${shippingCost > 0 ? `Transportul costa ${shippingCost} RON, indiferent de localitate.` : "Transportul este gratuit."} Plata se face exclusiv online, prin transfer bancar, inainte de expediere — nu livram cu plata ramburs.`,
+            `Livrarea se face prin curier rapid, in 3-5 zile lucratoare de la confirmarea comenzii, in toata Romania. Transport: ${shippingText}, oriunde in Romania. Plata se face exclusiv online, prin transfer bancar, inainte de expediere — nu livram cu plata ramburs.`,
         },
       },
       {
