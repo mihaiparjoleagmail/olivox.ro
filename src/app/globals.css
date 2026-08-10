@@ -2514,7 +2514,9 @@ a.pagination__btn {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
-.pd-form__row { display: flex; flex-direction: column; gap: 6px; }
+/* min-width: 0 — altfel textul lung din <select> (ex: "Selecteaza judet")
+   largeste coloana de grid si formularul iese din card pe telefon. */
+.pd-form__row { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .pd-form__row--full { grid-column: 1 / -1; }
 .pd-form__row label {
   font-size: 0.72rem;
