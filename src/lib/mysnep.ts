@@ -133,23 +133,33 @@ function firstAmount(fragment: string): { value: number; currency: string } | nu
   return { value, currency: cur === "LEI" ? "RON" : cur };
 }
 
-/** Citeste ambele preturi din blocul #prod_price. */
+/**
+ * Citeste preturile din blocul #prod_price. Doua forme, ambele intalnite:
+ *
+ *   cu discount:  <strong id="totale_articolo_scontato">RON 182,73</strong>
+ *                 (<strike>RON 209,51</strike>)
+ *   fara discount:<strong id="totale_articolo">RON 347,31</strong>
+ *
+ * Al doilea caz nu are <strike> si foloseste alt id — de aceea nu ne legam de
+ * id, ci de <strike>: daca exista, acolo e pretul de catalog si cifra din
+ * <strong> e cea de distribuitor; daca nu, singura cifra din bloc e chiar
+ * pretul de catalog.
+ */
 export function parseProductPrices(html: string): ProductPrices {
   const block = extractPriceBlock(html);
   if (!block) return { endUser: null, distributor: null, currency: "RON" };
 
-  const distributor = firstAmount(
-    /<strong[^>]*id\s*=\s*["']totale_articolo_scontato["'][^>]*>([\s\S]{0,80}?)<\/strong>/i.exec(block)?.[1] || ""
-  );
   const struck = firstAmount(/<strike[^>]*>([\s\S]{0,80}?)<\/strike>/i.exec(block)?.[1] || "");
+  const strong = firstAmount(/<strong[^>]*>([\s\S]{0,80}?)<\/strong>/i.exec(block)?.[1] || "");
+  const anyAmount = strong || firstAmount(block.slice(0, 400));
 
-  // Fara <strike> nu exista discount: pretul afisat e chiar cel de catalog.
-  const endUser = struck || distributor;
+  const endUser = struck || anyAmount;
+  const distributor = struck ? anyAmount : null;
 
   return {
     endUser: endUser?.value ?? null,
     distributor: distributor?.value ?? null,
-    currency: endUser?.currency || distributor?.currency || "RON",
+    currency: endUser?.currency || "RON",
   };
 }
 
@@ -161,6 +171,16 @@ export function parseProductPrices(html: string): ProductPrices {
    in loc de 349.
    ========================================================================= */
 
+/** Numele fara diacritice/entitati/spatii dublate — cheie de potrivire stabila. */
+export function normalizeName(name: string): string {
+  return decodeEntities(name)
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim();
+}
+
 export interface SupplierProduct {
   sku: string;
   name: string;
@@ -168,7 +188,12 @@ export interface SupplierProduct {
   /** Pretul de catalog (end user). */
   price: number | null;
   distributorPrice: number | null;
-  available: boolean;
+  /**
+   * true = furnizorul scrie "disponibil", false = scrie ca nu e disponibil,
+   * null = nu spune nimic. Pe null NU atingem stocul: exact asa s-au marcat
+   * gresit produse ca indisponibile.
+   */
+  available: boolean | null;
   /** Slug-ul categoriei mysnep in care a fost gasit prima data. */
   category: string;
 }
@@ -217,6 +242,17 @@ function decodeEntities(s: string): string {
     .trim();
 }
 
+/**
+ * Disponibilitatea din cardul de listare. Atentie: "indisponibil" contine
+ * "disponibil" ca subsir, deci negatiile se verifica primele.
+ */
+export function readAvailability(card: string): boolean | null {
+  const text = card.replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ");
+  if (/in?disponibil|non\s*disponibil|esaurito|epuizat|stoc\s*epuizat/i.test(text)) return false;
+  if (/(^|[^a-z])disponibil/i.test(text)) return true;
+  return null;
+}
+
 /** Produsele dintr-o pagina de listare. */
 export function parseListingPage(html: string, category: string): SupplierProduct[] {
   const out: SupplierProduct[] = [];
@@ -248,7 +284,7 @@ export function parseListingPage(html: string, category: string): SupplierProduc
       url: href.startsWith("http") ? href : `${BASE}/${href.replace(/^\.*\//, "")}`,
       price,
       distributorPrice,
-      available: /disponibil|disponibile/i.test(card) && !/nu\s*e?\s*disponibil|non\s*disponibile/i.test(card),
+      available: readAvailability(card),
       category,
     });
   }
@@ -260,46 +296,105 @@ export function parseListingPage(html: string, category: string): SupplierProduc
  * intoarce catalogul complet, deduplicat dupa cod. Un produs poate aparea in
  * mai multe categorii — pastram prima aparitie.
  */
+const PER_PAGE = 24;
+
+/** Pauza scurta intre cereri: mysnep intoarce pagini trunchiate cand e batut prea des. */
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** O pagina, cu cateva reincercari. O cerere picata inseamna produse "disparute". */
+async function fetchListing(url: string, cookies: string): Promise<string | null> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const r = await fetch(url, { headers: headersFor(cookies), cache: "no-store" });
+      if (r.ok) return await r.text();
+    } catch {
+      /* reincercam */
+    }
+    await sleep(400 * (attempt + 1));
+  }
+  return null;
+}
+
+/**
+ * Toate produsele unei categorii, paginat. Intoarce si cate a declarat pagina
+ * ("N articole gasite"), ca apelantul sa poata verifica daca a citit tot.
+ */
+async function crawlCategory(
+  cat: string,
+  cookies: string,
+  onPage?: (page: number) => void
+): Promise<{ items: SupplierProduct[]; declared: number; loggedOut: boolean }> {
+  // Cheia include numele: la textilele EaseLine toate marimile au acelasi cod
+  // ("GENUNCHIERA ... - L" si "- XXL" au amandoua Cod: 4000506), deci dedupe
+  // dupa cod ar arunca variantele si ar face categoria sa para incompleta.
+  const byKey = new Map<string, SupplierProduct>();
+  let declared = 0;
+  let loggedOut = false;
+
+  for (let page = 1; page <= 30; page++) {
+    const url = `${BASE}/${cat}${page > 1 ? `?pag=${page}` : ""}`;
+    const html = await fetchListing(url, cookies);
+    if (html === null) break;
+    onPage?.(page);
+
+    if (page === 1) declared = Number(/(\d+)\s*articole\s*g[ăa]site/i.exec(html)?.[1] || 0);
+    if (/REGISTRAZIONE|REGISTRARE/i.test(html) && !/logout|esci\b|deconect/i.test(html)) loggedOut = true;
+
+    const found = parseListingPage(html, cat);
+    for (const p of found) {
+      const key = `${p.sku}::${normalizeName(p.name)}`;
+      if (!byKey.has(key)) byKey.set(key, p);
+    }
+
+    // Mergem mai departe cat timp pagina a venit plina sau catalogul declara mai mult.
+    const full = found.length >= PER_PAGE;
+    const moreDeclared = declared > page * PER_PAGE;
+    if (!full && !moreDeclared) break;
+    await sleep(250);
+  }
+
+  return { items: [...byKey.values()], declared, loggedOut };
+}
+
 export async function fetchSupplierCatalog(
   cookies: string,
   onProgress?: (done: number, total: number, label: string) => void
-): Promise<{ products: Map<string, SupplierProduct>; expired: boolean }> {
+): Promise<{ products: Map<string, SupplierProduct>; expired: boolean; partial: boolean; failures: string[] }> {
   const categories = await fetchCategoryUrls(cookies);
   const products = new Map<string, SupplierProduct>();
+  const failures: string[] = [];
   let pagesDone = 0;
   let sawPrice = false;
   let sawLogin = false;
 
   for (const cat of categories) {
-    let page = 1;
-    let declared = Infinity;
-    for (;;) {
-      const url = `${BASE}/${cat}${page > 1 ? `?pag=${page}` : ""}`;
-      const html = await fetch(url, { headers: headersFor(cookies), cache: "no-store" })
-        .then((r) => (r.ok ? r.text() : ""))
-        .catch(() => "");
-      pagesDone++;
-      if (!html) break;
+    // mysnep raspunde uneori cu listari trunchiate. Comparam cu numarul pe care
+    // il declara chiar el si reincercam categoria daca am citit mai putin —
+    // altfel produsele necitite ar aparea drept "disparute de la furnizor".
+    let best: SupplierProduct[] = [];
+    let declared = 0;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const r = await crawlCategory(cat, cookies, () => {
+        pagesDone++;
+        onProgress?.(pagesDone, 0, `${cat}`);
+      });
+      if (r.loggedOut) sawLogin = true;
+      declared = r.declared;
+      if (r.items.length > best.length) best = r.items;
+      if (declared === 0 || best.length >= declared) break;
+    }
 
-      if (page === 1) {
-        declared = Number(/(\d+)\s*articole\s*g[ăa]site/i.exec(html)?.[1] || 0);
-      }
-      if (/REGISTRAZIONE|REGISTRARE/i.test(html) && !/logout|esci\b|deconect/i.test(html)) sawLogin = true;
-
-      const found = parseListingPage(html, cat);
-      for (const p of found) {
-        if (p.price != null) sawPrice = true;
-        if (!products.has(p.sku)) products.set(p.sku, p);
-      }
-      onProgress?.(pagesDone, 0, `${cat} (pag. ${page})`);
-
-      // 24 pe pagina; ne oprim cand am acoperit cate a declarat categoria.
-      if (found.length === 0 || page * 24 >= declared || page > 20) break;
-      page++;
+    if (declared > 0 && best.length < declared) {
+      failures.push(`${cat}: ${best.length}/${declared}`);
+    }
+    for (const p of best) {
+      if (p.price != null) sawPrice = true;
+      const key = `${p.sku}::${normalizeName(p.name)}`;
+      if (!products.has(key)) products.set(key, p);
     }
   }
 
-  return { products, expired: sawLogin && !sawPrice };
+  return { products, expired: sawLogin && !sawPrice, partial: failures.length > 0, failures };
 }
 
 /** Cookie-ul de sesiune: intai din setari, apoi din env. */
@@ -359,5 +454,126 @@ export async function fetchSupplierPrice(
     distributorPrice: parsed.distributor,
     currency: parsed.currency,
     candidates,
+  };
+}
+
+/* =========================================================================
+   PAGINA DE PRODUS — continutul complet
+   Tot ce afiseaza mysnep e in HTML-ul livrat (cu sesiune valida), deci se
+   citeste cu fetch simplu. Nu e nevoie de Playwright, deci merge si din
+   functiile Vercel. Taburile au id-uri numerice ("20"), care nu sunt selectori
+   CSS valizi — de aceea cautarea se face pe text, nu cu querySelector.
+   ========================================================================= */
+
+export interface ProductDetails {
+  description: string;
+  shortDescription: string;
+  ingredients: string;
+  usageInfo: string;
+  warnings: string;
+  certifications: string;
+  quantity: string;
+  points: number | null;
+  datasheetUrl: string;
+  imageUrl: string;
+  sku: string;
+  price: number | null;
+  distributorPrice: number | null;
+  available: boolean | null;
+}
+
+/**
+ * Continutul unui <div id="X">, cu numararea div-urilor imbricate.
+ * Comentariile HTML se scot inainte: pagina contine `<!--<div ...>-->`, iar
+ * div-ul comentat ar strica numaratoarea si ar taia continutul.
+ */
+function divById(html: string, id: string): string | null {
+  const clean = html.replace(/<!--[\s\S]*?-->/g, "");
+  const at = clean.indexOf(`id="${id}"`);
+  if (at === -1) return null;
+  const bodyStart = clean.indexOf(">", at) + 1;
+  if (bodyStart === 0) return null;
+  let depth = 1;
+  const tag = /<\/?div\b[^>]*>/gi;
+  tag.lastIndex = bodyStart;
+  let m: RegExpExecArray | null;
+  while ((m = tag.exec(clean))) {
+    depth += m[0][1] === "/" ? -1 : 1;
+    if (depth === 0) return clean.slice(bodyStart, m.index);
+  }
+  return null;
+}
+
+/** Pastreaza paragrafele si tabelele, scoate stilurile inline si atributele. */
+function cleanHtml(raw: string | null): string {
+  if (!raw) return "";
+  const out = decodeEntities(
+    raw
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      // <p> imbricate in <p>, cum vin de la ei — le aplatizam
+      .replace(/<p[^>]*>\s*<p[^>]*>/gi, "<p>")
+      .replace(/<\/p>\s*<\/p>/gi, "</p>")
+      .replace(/\s(style|class|border|cellpadding|cellspacing|align|width|height)="[^"]*"/gi, "")
+      .replace(/<p>\s*(&nbsp;|\s)*<\/p>/gi, "")
+  );
+  return out.replace(/\s+/g, " ").trim();
+}
+
+function plainText(raw: string | null): string {
+  return decodeEntities((raw || "").replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+}
+
+/** Prima propozitie intreaga care incape in `max` caractere. */
+function firstSentences(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const stop = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("! "), cut.lastIndexOf("? "));
+  if (stop > max * 0.4) return cut.slice(0, stop + 1).trim();
+  return cut.replace(/\s+\S*$/, "").trim();
+}
+
+export async function fetchProductDetails(
+  sourceUrl: string,
+  cookies: string
+): Promise<{ ok: boolean; details?: ProductDetails; reason?: string }> {
+  const url = sourceUrl.startsWith("http") ? sourceUrl : `${BASE}/${sourceUrl.replace(/^\//, "")}`;
+  let html: string;
+  try {
+    const res = await fetch(url, { headers: headersFor(cookies), cache: "no-store" });
+    if (!res.ok) return { ok: false, reason: `http_${res.status}` };
+    html = await res.text();
+  } catch {
+    return { ok: false, reason: "network" };
+  }
+
+  const prices = parseProductPrices(html);
+  if (prices.endUser == null && /REGISTRAZIONE|REGISTRARE/i.test(html) && !/logout|esci\b/i.test(html)) {
+    return { ok: false, reason: "expired" };
+  }
+
+  const description = cleanHtml(divById(html, "one"));
+  const descPlain = plainText(divById(html, "one"));
+  const imgRel = /network\/img\/Articoli\/big\/[\w.-]+/i.exec(html)?.[0] || "";
+
+  return {
+    ok: true,
+    details: {
+      description,
+      shortDescription: firstSentences(descPlain, 180),
+      ingredients: cleanHtml(divById(html, "20")),
+      usageInfo: cleanHtml(divById(html, "21")),
+      warnings: cleanHtml(divById(html, "22")),
+      // Tabul de certificari incepe cu titlul "Certifications" — il scoatem.
+      certifications: cleanHtml(divById(html, "24")).replace(/^\s*Certifications\s*/i, ""),
+      quantity: plainText(/class="size-case"[^>]*>([\s\S]{0,160}?)<\/div>/i.exec(html)?.[1] || ""),
+      points: Number(/Puncte Volum[^0-9]{0,20}([\d.,]+)/i.exec(html)?.[1]?.replace(",", ".")) || null,
+      datasheetUrl: /href="([^"]*\.pdf)"/i.exec(html)?.[1] || "",
+      imageUrl: imgRel ? `${BASE}/${imgRel}` : "",
+      sku: /Cod\s*produs\s*[:\s]*(\w+)/i.exec(plainText(html))?.[1] || "",
+      price: prices.endUser,
+      distributorPrice: prices.distributor,
+      available: readAvailability(html),
+    },
   };
 }

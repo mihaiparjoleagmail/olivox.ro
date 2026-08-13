@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
-import { fetchSupplierPrice, fetchSupplierCatalog, normalizeCookies, type SupplierProduct } from "@/lib/mysnep";
+import { fetchSupplierPrice, fetchSupplierCatalog, normalizeCookies, normalizeName, type SupplierProduct } from "@/lib/mysnep";
 import { displayPrice } from "@/lib/price";
 
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
@@ -31,6 +31,7 @@ async function getMysnepCookies(): Promise<string> {
 interface ProductRow {
   id: number;
   name: string;
+  slug: string;
   sku: string | null;
   price: number | null;
   source_url: string | null;
@@ -38,9 +39,22 @@ interface ProductRow {
   stock_status: string | null;
 }
 
+/** Cheia sub care se pastreaza ultimul rezultat de scanare. */
+const SYNC_KEY = "mysnep_sync";
+
+async function loadLastScan(): Promise<unknown | null> {
+  const { data } = await supabase.from("settings").select("value").eq("key", SYNC_KEY).maybeSingle();
+  if (!data?.value) return null;
+  try { return JSON.parse(data.value); } catch { return null; }
+}
+
+async function saveScan(result: unknown): Promise<void> {
+  await supabase.from("settings").upsert({ key: SYNC_KEY, value: JSON.stringify(result) }, { onConflict: "key" });
+}
+
 /**
- * GET ?url=... — diagnostic pe o singura pagina de produs. Arata toate cifrele
- * de pret gasite si pe care a ales-o parserul.
+ * GET fara parametri — ultimul rezultat de scanare, ca pagina sa il arate fara
+ * sa mai bata mysnep. GET ?url=... — diagnostic pe o singura pagina de produs.
  */
 export async function GET(request: Request) {
   if (!checkAuth(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -48,6 +62,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   let target = searchParams.get("url");
   const id = searchParams.get("id");
+
+  if (!target && !id) {
+    return NextResponse.json({ scan: await loadLastScan() });
+  }
   if (!target && id) {
     const { data } = await supabase.from("products").select("source_url").eq("id", Number(id)).maybeSingle();
     target = data?.source_url || null;
@@ -124,7 +142,7 @@ export async function POST(request: Request) {
       try {
         send({ type: "start", label: "Se citeste catalogul furnizorului..." });
 
-        const { products: supplier, expired } = await fetchSupplierCatalog(cookies, (pages, _t, label) => {
+        const { products: supplier, expired, partial, failures } = await fetchSupplierCatalog(cookies, (pages, _t, label) => {
           send({ type: "progress", stage: "catalog", pages, label });
         });
 
@@ -146,11 +164,40 @@ export async function POST(request: Request) {
 
         const { data, error } = await supabase
           .from("products")
-          .select("id, name, sku, price, source_url, category_slugs, stock_status")
+          .select("id, name, slug, sku, price, source_url, category_slugs, stock_status")
           .order("name");
         if (error) throw error;
         const ours = (data || []) as ProductRow[];
-        const oursBySku = new Map(ours.filter((p) => p.sku).map((p) => [String(p.sku), p]));
+
+        /*
+         * Potrivirea produs-la-produs nu se poate face doar pe cod. La textilele
+         * EaseLine furnizorul foloseste acelasi cod pentru toate marimile
+         * ("GENUNCHIERA ... - L" si "- XXL" au amandoua 4000506) si le distinge
+         * prin nume, in timp ce la noi codurile au sufix de marime (4000506MLP).
+         * Deci: intai pe nume (unic si la ei, si la noi), apoi pe cod exact.
+         */
+        const supplierByName = new Map<string, SupplierProduct>();
+        const supplierBySku = new Map<string, SupplierProduct[]>();
+        for (const sup of supplier.values()) {
+          const n = normalizeName(sup.name);
+          if (!supplierByName.has(n)) supplierByName.set(n, sup);
+          const list = supplierBySku.get(sup.sku) || [];
+          list.push(sup);
+          supplierBySku.set(sup.sku, list);
+        }
+
+        const matchOurs = (p: ProductRow): SupplierProduct | null => {
+          const byName = supplierByName.get(normalizeName(p.name));
+          if (byName) return byName;
+          if (!p.sku) return null;
+          // Cod exact, dar doar cand la furnizor codul e al unui singur produs —
+          // altfel am lega un produs de-al nostru de o marime aleatoare.
+          const exact = supplierBySku.get(String(p.sku));
+          if (exact && exact.length === 1) return exact[0];
+          return null;
+        };
+
+        const matchedSupplier = new Set<string>();
 
         const categoryMap = buildCategoryMap(ours, supplier);
 
@@ -160,17 +207,49 @@ export async function POST(request: Request) {
         }> = [];
         const newProducts: Array<{
           sku: string; name: string; url: string; price: number | null;
-          slug: string; category: string; available: boolean;
+          slug: string; category: string; available: boolean | null;
         }> = [];
         const missingProducts: Array<{
           id: number; name: string; sku: string | null; price: number | null;
           alreadyOut: boolean; renamedTo?: string | null;
+          // slug + categoria, ca pagina sa poata face link catre produsul de pe site
+          slug: string; category: string;
+        }> = [];
+        // Stocul nu se sincroniza deloc: produse aduse in aprilie ramaneau
+        // "indisponibil" desi furnizorul le are pe stoc.
+        const stockChanges: Array<{
+          id: number; name: string; sku: string;
+          from: string; to: string;
         }> = [];
         let unchanged = 0;
 
-        for (const sup of supplier.values()) {
-          const mine = oursBySku.get(sup.sku);
-          if (!mine) {
+        for (const p of ours) {
+          const sup = matchOurs(p);
+          if (!sup) continue;
+          matchedSupplier.add(`${sup.sku}::${normalizeName(sup.name)}`);
+
+          if (sup.available !== null) {
+            const want = sup.available ? "in_stock" : "out_of_stock";
+            const have = p.stock_status === "out_of_stock" ? "out_of_stock" : "in_stock";
+            if (want !== have) {
+              stockChanges.push({ id: p.id, name: p.name, sku: String(p.sku || sup.sku), from: have, to: want });
+            }
+          }
+
+          if (sup.price == null) continue;
+          const oldDisplay = displayPrice(p.price);
+          const newDisplay = displayPrice(sup.price);
+          if (newDisplay !== oldDisplay) {
+            priceChanges.push({ id: p.id, name: p.name, sku: String(p.sku || sup.sku), oldDisplay, newDisplay, newPrice: sup.price });
+          } else {
+            unchanged++;
+          }
+        }
+
+        // Ce a ramas nepotrivit la furnizor = produse pe care nu le avem.
+        for (const [key, sup] of supplier.entries()) {
+          if (matchedSupplier.has(key)) continue;
+          {
             newProducts.push({
               sku: sup.sku,
               name: sup.name,
@@ -180,15 +259,6 @@ export async function POST(request: Request) {
               category: categoryMap[sup.category] || "",
               available: sup.available,
             });
-            continue;
-          }
-          if (sup.price == null) continue;
-          const oldDisplay = displayPrice(mine.price);
-          const newDisplay = displayPrice(sup.price);
-          if (newDisplay !== oldDisplay) {
-            priceChanges.push({ id: mine.id, name: mine.name, sku: sup.sku, oldDisplay, newDisplay, newPrice: sup.price });
-          } else {
-            unchanged++;
           }
         }
 
@@ -198,8 +268,11 @@ export async function POST(request: Request) {
         const baseCode = (sku: string) => sku.replace(/[A-Za-z]+$/, "");
         const newBySku = new Map(newProducts.map((n) => [n.sku, n]));
 
+        // Daca vreo pagina de listare n-a raspuns, nu cunoastem tot catalogul,
+        // deci nu putem spune despre niciun produs ca a disparut de la furnizor.
         for (const p of ours) {
-          if (!p.sku || supplier.has(String(p.sku))) continue;
+          if (partial) break;
+          if (matchOurs(p)) continue;
           const base = baseCode(String(p.sku));
           const renamedTo = base !== String(p.sku) && newBySku.has(base) ? base : null;
           missingProducts.push({
@@ -209,22 +282,32 @@ export async function POST(request: Request) {
             price: p.price,
             alreadyOut: p.stock_status === "out_of_stock",
             renamedTo,
+            slug: p.slug,
+            category: (p.category_slugs || [])[0] || "",
           });
         }
 
+        stockChanges.sort((a, b) => a.name.localeCompare(b.name, "ro"));
         priceChanges.sort((a, b) => a.name.localeCompare(b.name, "ro"));
         newProducts.sort((a, b) => a.name.localeCompare(b.name, "ro"));
         missingProducts.sort((a, b) => a.name.localeCompare(b.name, "ro"));
 
-        send({
-          type: "done",
+        const result = {
+          scannedAt: new Date().toISOString(),
+          partial,
+          failures,
           supplierTotal: supplier.size,
           ourTotal: ours.length,
           unchanged,
           priceChanges,
+          stockChanges,
           newProducts,
           missingProducts,
-        });
+        };
+        // Se salveaza ca sa nu fie nevoie de rescanare cand treci de la preturi
+        // la "ce e nou" sau cand redeschizi pagina.
+        await saveScan(result);
+        send({ type: "done", ...result });
       } catch (e) {
         send({ type: "error", error: e instanceof Error ? e.message : String(e) });
       } finally {

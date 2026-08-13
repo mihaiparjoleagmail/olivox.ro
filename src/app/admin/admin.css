@@ -2626,3 +2626,27 @@
 @media (max-width: 640px) {
   .price-sync__row { grid-template-columns: auto 1fr auto; }
 }
+
+/* Pagina de sincronizare */
+.sync-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 0 16px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 16px;
+}
+.sync-head h2 { font-size: 1.15rem; }
+.sync-summary {
+  background: rgba(90, 138, 77, 0.08);
+  border: 1.5px solid var(--color-success);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+.sync-summary a { color: var(--color-primary); }
+.sync-summary summary { cursor: pointer; }

@@ -43,7 +43,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from("products")
-    .select("id, name, slug, r2_image_url, image_url, price, currency, category_slugs, short_description, sku, stock_status", { count: "exact" });
+    .select("id, name, slug, r2_image_url, image_url, price, currency, category_slugs, short_description, sku, stock_status, imported_at", { count: "exact" });
 
   if (category) {
     query = query.contains("category_slugs", [category]);
@@ -58,8 +58,14 @@ export async function GET(request: Request) {
     }
   }
 
+  // Sortare din admin: implicit dupa id, dar si dupa data importului, ca sa se
+  // vada imediat produsele nou aduse de la furnizor.
+  const sortParam = searchParams.get("sort") || "id";
+  const sortCol = ["id", "name", "price", "imported_at"].includes(sortParam) ? sortParam : "id";
+  const asc = searchParams.get("dir") === "asc";
+
   const { data, error, count } = await query
-    .order("id", { ascending: false })
+    .order(sortCol, { ascending: asc, nullsFirst: false })
     .range(from, to);
 
   if (error) {

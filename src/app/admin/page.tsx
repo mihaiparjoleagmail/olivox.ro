@@ -92,6 +92,8 @@ interface Product {
   price: number;
   category_slugs: string[];
   short_description: string;
+  /** Data importului de la furnizor — dupa ea se sorteaza ca sa se vada ce e nou. */
+  imported_at?: string | null;
 }
 
 const STATUSES = ["in procesare", "finalizata", "livrat", "anulata", "retur"];
@@ -858,7 +860,6 @@ function ProductsPanel({ auth }: { auth: string }) {
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [showAdd, setShowAdd] = useState(false);
-  const [showPriceSync, setShowPriceSync] = useState(false);
   const [newName, setNewName] = useState("");
   const [newSlug, setNewSlug] = useState("");
   const config = useConfig();
@@ -867,6 +868,8 @@ function ProductsPanel({ auth }: { auth: string }) {
   const [saving, setSaving] = useState(false);
   const [filterCat, setFilterCat] = useState(() => sessionStorage.getItem("admin_products_filter") || "");
   const [allCats, setAllCats] = useState<{slug: string; name: string}[]>([]);
+  const [sortBy, setSortBy] = useState<"id" | "imported_at" | "name" | "price">("id");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const imgUpload = useImageUpload();
 
   // Clear saved position after restoring
@@ -884,7 +887,7 @@ function ProductsPanel({ auth }: { auth: string }) {
     setLoading(true);
     const catParam = filterCat ? `&category=${filterCat}` : "";
     const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
-    const res = await fetch(`/api/products?page=${page}&per_page=20${catParam}${searchParam}`);
+    const res = await fetch(`/api/products?page=${page}&per_page=20${catParam}${searchParam}&sort=${sortBy}&dir=${sortDir}`);
     if (res.ok) {
       const data = await res.json();
       setProducts(data.products || []);
@@ -892,9 +895,16 @@ function ProductsPanel({ auth }: { auth: string }) {
       setTotal(data.total || 0);
     }
     setLoading(false);
-  }, [page, filterCat, search]);
+  }, [page, filterCat, search, sortBy, sortDir]);
 
   useEffect(() => { fetchProds(); }, [fetchProds]);
+
+  const toggleSort = (col: "id" | "imported_at" | "name" | "price") => {
+    if (sortBy === col) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else { setSortBy(col); setSortDir("desc"); }
+    setPage(1);
+  };
+  const arrow = (col: string) => (sortBy === col ? (sortDir === "asc" ? " \u2191" : " \u2193") : "");
 
   const startEdit = (p: Product) => { setEditingId(p.id); setEditName(p.name); setEditPrice(String(p.price)); };
 
@@ -941,15 +951,13 @@ function ProductsPanel({ auth }: { auth: string }) {
         </select>
         <input className="admin-search" placeholder="Cauta produs..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
         <span className="admin-count">{total}</span>
-        <button className="admin-inline-btn" onClick={() => setShowPriceSync(true)} title="Reactualizeaza preturile din mysnep">
-          ⟳ Preturi
-        </button>
+        <a className="admin-inline-btn" href="/admin/sincronizare" title="Sincronizare catalog cu mysnep"
+           style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", padding: "0 10px" }}>
+          ⟳ Sincronizare
+        </a>
         <a href="/admin/produse/nou" className="admin-add-btn" style={{ textDecoration: "none" }}><span className="admin-add-btn__plus">+</span><span className="admin-add-btn__text"> Adauga</span></a>
       </div>
 
-      {showPriceSync && (
-        <PriceSyncPanel auth={auth} onClose={() => setShowPriceSync(false)} onApplied={fetchProds} />
-      )}
 
       {showAdd && (
         <div className="admin-add-form">
@@ -971,7 +979,14 @@ function ProductsPanel({ auth }: { auth: string }) {
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
-                <tr><th>Img</th><th>Nume</th><th>Pret</th><th>Categorii</th><th>Actiuni</th></tr>
+                <tr>
+                  <th>Img</th>
+                  <th className="ot-sortable" onClick={() => toggleSort("name")}>Nume{arrow("name")}</th>
+                  <th className="ot-sortable" onClick={() => toggleSort("price")}>Pret{arrow("price")}</th>
+                  <th>Categorii</th>
+                  <th className="ot-sortable" onClick={() => toggleSort("imported_at")}>Importat{arrow("imported_at")}</th>
+                  <th>Actiuni</th>
+                </tr>
               </thead>
               <tbody>
                 {filtered.map((p) => (
@@ -993,6 +1008,9 @@ function ProductsPanel({ auth }: { auth: string }) {
                     </td>
                     <td><strong>{p.price} RON</strong></td>
                     <td className="admin-table__muted">{p.category_slugs?.join(", ")}</td>
+                    <td className="admin-table__muted" style={{ whiteSpace: "nowrap" }}>
+                      {p.imported_at ? new Date(p.imported_at).toLocaleDateString("ro-RO") : "\u2014"}
+                    </td>
                     <td>
                       <div className="admin-actions">
                         <a className="admin-action-btn" href={`/admin/produse/${p.id}`} title="Editeaza">✎</a>
@@ -3131,280 +3149,6 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
         )}
       </div>
     </>
-  );
-}
-
-// ===== SINCRONIZARE CATALOG CU MYSNEP =====
-interface PriceChange { id: number; name: string; sku: string; oldDisplay: number; newDisplay: number; newPrice: number }
-interface NewProduct { sku: string; name: string; url: string; price: number | null; slug: string; category: string; available: boolean }
-interface MissingProduct { id: number; name: string; sku: string | null; price: number | null; alreadyOut: boolean; renamedTo?: string | null }
-
-/**
- * Doi pasi: intai se citeste catalogul furnizorului si se arata diferentele
- * (preturi schimbate / produse noi la ei / produse care nu mai exista la ei),
- * apoi se scrie doar ce a bifat utilizatorul.
- */
-function PriceSyncPanel({ auth, onClose, onApplied }: { auth: string; onClose: () => void; onApplied: () => void }) {
-  const [phase, setPhase] = useState<"idle" | "scanning" | "review" | "applying" | "applied">("idle");
-  const [pages, setPages] = useState(0);
-  const [label, setLabel] = useState("");
-  const [tab, setTab] = useState<"prices" | "new" | "missing">("prices");
-  const [priceChanges, setPriceChanges] = useState<PriceChange[]>([]);
-  const [newProducts, setNewProducts] = useState<NewProduct[]>([]);
-  const [missingProducts, setMissingProducts] = useState<MissingProduct[]>([]);
-  const [stats, setStats] = useState({ supplierTotal: 0, ourTotal: 0, unchanged: 0 });
-  const [pickPrices, setPickPrices] = useState<Set<number>>(new Set());
-  const [pickNew, setPickNew] = useState<Set<string>>(new Set());
-  const [pickMissing, setPickMissing] = useState<Set<number>>(new Set());
-  const [missingMode, setMissingMode] = useState<"out_of_stock" | "delete">("out_of_stock");
-  const [errorMsg, setErrorMsg] = useState("");
-  const [summary, setSummary] = useState<{ pricesUpdated: number; missingHandled: number; newCreated: number } | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => () => abortRef.current?.abort(), []);
-
-  const start = async () => {
-    setPhase("scanning"); setErrorMsg(""); setPages(0);
-    setPriceChanges([]); setNewProducts([]); setMissingProducts([]);
-    const ac = new AbortController(); abortRef.current = ac;
-    try {
-      const res = await fetch("/api/admin/refresh-prices", { method: "POST", headers: { Authorization: auth }, signal: ac.signal });
-      if (!res.ok || !res.body) {
-        const d = await res.json().catch(() => ({}));
-        setErrorMsg(d?.error || `Eroare ${res.status}`); setPhase("idle"); return;
-      }
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = "";
-      for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        const lines = buf.split("\n"); buf = lines.pop() || "";
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          let ev: Record<string, unknown>;
-          try { ev = JSON.parse(line); } catch { continue; }
-          if (ev.type === "start") setLabel(String(ev.label || ""));
-          else if (ev.type === "progress") { setPages(Number(ev.pages) || 0); setLabel(String(ev.label || "")); }
-          else if (ev.type === "error") { setErrorMsg(String(ev.error)); setPhase("idle"); }
-          else if (ev.type === "done") {
-            const pc = (ev.priceChanges as PriceChange[]) || [];
-            const np = (ev.newProducts as NewProduct[]) || [];
-            const mp = (ev.missingProducts as MissingProduct[]) || [];
-            setPriceChanges(pc); setNewProducts(np); setMissingProducts(mp);
-            setStats({ supplierTotal: Number(ev.supplierTotal) || 0, ourTotal: Number(ev.ourTotal) || 0, unchanged: Number(ev.unchanged) || 0 });
-            // Preturile se bifeaza singure (e actiunea sigura si asteptata);
-            // produsele noi si cele disparute raman nebifate, sunt decizii.
-            setPickPrices(new Set(pc.map((c) => c.id)));
-            setPickNew(new Set()); setPickMissing(new Set());
-            setTab(pc.length ? "prices" : np.length ? "new" : "missing");
-            setPhase("review");
-          }
-        }
-      }
-    } catch (e) {
-      if ((e as Error).name !== "AbortError") { setErrorMsg(String(e)); setPhase("idle"); }
-    }
-  };
-
-  const apply = async () => {
-    setPhase("applying"); setErrorMsg("");
-    try {
-      const res = await fetch("/api/admin/refresh-prices/apply", {
-        method: "POST",
-        headers: { Authorization: auth, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prices: priceChanges.filter((c) => pickPrices.has(c.id)),
-          newProducts: newProducts.filter((n) => pickNew.has(n.sku)),
-          missing: missingProducts.filter((m) => pickMissing.has(m.id)),
-          missingMode,
-        }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) { setErrorMsg(d?.error || `Eroare ${res.status}`); setPhase("review"); return; }
-      setSummary({ pricesUpdated: d.pricesUpdated || 0, missingHandled: d.missingHandled || 0, newCreated: d.newCreated || 0 });
-      setPhase("applied"); onApplied();
-    } catch (e) { setErrorMsg(String(e)); setPhase("review"); }
-  };
-
-  const toggleNum = (set: Set<number>, key: number, applyFn: (s: Set<number>) => void) => {
-    const next = new Set(set);
-    if (next.has(key)) next.delete(key); else next.add(key);
-    applyFn(next);
-  };
-  const toggleStr = (set: Set<string>, key: string, applyFn: (s: Set<string>) => void) => {
-    const next = new Set(set);
-    if (next.has(key)) next.delete(key); else next.add(key);
-    applyFn(next);
-  };
-
-  const totalPicked = pickPrices.size + pickNew.size + pickMissing.size;
-  const busy = phase === "scanning" || phase === "applying";
-
-  return (
-    <div className="ot-modal-overlay" onClick={busy ? undefined : onClose}>
-      <div className="ot-modal price-sync" onClick={(e) => e.stopPropagation()}>
-        <div className="ot-modal__header">
-          <h2>Sincronizare catalog cu mysnep</h2>
-          <button className="ot-modal__close" onClick={onClose} disabled={busy}>&#10005;</button>
-        </div>
-
-        <div className="ot-modal__body">
-          {errorMsg && <div className="price-sync__error">{errorMsg}</div>}
-
-          {phase === "idle" && (
-            <>
-              <p className="price-sync__lead">
-                Se citeste catalogul furnizorului din paginile de categorie si se compara cu al nostru:
-                preturi schimbate, produse noi la ei si produse care nu mai apar la ei.
-                Nu se scrie nimic pana nu bifezi si confirmi.
-              </p>
-              <button className="admin-add-btn" onClick={start}>Porneste verificarea</button>
-            </>
-          )}
-
-          {busy && (
-            <>
-              <div className="price-sync__bar"><div className="price-sync__fill price-sync__fill--indet" /></div>
-              <div className="price-sync__status">
-                {phase === "scanning" ? <><strong>{pages}</strong> pagini citite &mdash; {label}</> : <>Se salveaza...</>}
-              </div>
-            </>
-          )}
-
-          {phase === "review" && (
-            <>
-              <div className="price-sync__summary">
-                <span><strong>{stats.supplierTotal}</strong> la furnizor</span>
-                <span><strong>{stats.ourTotal}</strong> la noi</span>
-                <span><strong>{stats.unchanged}</strong> neschimbate</span>
-              </div>
-
-              <div className="price-sync__tabs">
-                <button className={`price-sync__tab ${tab === "prices" ? "is-active" : ""}`} onClick={() => setTab("prices")}>
-                  Preturi ({priceChanges.length})
-                </button>
-                <button className={`price-sync__tab ${tab === "new" ? "is-active" : ""}`} onClick={() => setTab("new")}>
-                  Noi la furnizor ({newProducts.length})
-                </button>
-                <button className={`price-sync__tab ${tab === "missing" ? "is-active" : ""}`} onClick={() => setTab("missing")}>
-                  Nu mai sunt la ei ({missingProducts.length})
-                </button>
-              </div>
-
-              {tab === "prices" && (
-                priceChanges.length === 0 ? <p className="price-sync__lead">Toate preturile sunt la zi.</p> : (
-                  <>
-                    <button className="price-sync__all" onClick={() => setPickPrices(pickPrices.size === priceChanges.length ? new Set() : new Set(priceChanges.map((c) => c.id)))}>
-                      {pickPrices.size === priceChanges.length ? "Deselecteaza tot" : "Selecteaza tot"}
-                    </button>
-                    <div className="price-sync__list">
-                      {priceChanges.map((c) => (
-                        <label key={c.id} className="price-sync__row">
-                          <input type="checkbox" checked={pickPrices.has(c.id)} onChange={() => toggleNum(pickPrices, c.id, setPickPrices)} />
-                          <span className="price-sync__name">{c.name} &middot; {c.sku}</span>
-                          <span className="price-sync__old">{c.oldDisplay}</span>
-                          <span className="price-sync__arrow">&rarr;</span>
-                          <span className={`price-sync__new ${c.newDisplay > c.oldDisplay ? "is-up" : "is-down"}`}>{c.newDisplay} RON</span>
-                        </label>
-                      ))}
-                    </div>
-                  </>
-                )
-              )}
-
-              {tab === "new" && (
-                newProducts.length === 0 ? <p className="price-sync__lead">Nu au produse noi fata de noi.</p> : (
-                  <>
-                    <p className="price-sync__lead">
-                      Se creeaza ca schelet: nume, cod, pret, link catre mysnep si categoria dedusa.
-                      Descrierea si imaginile le completezi din editorul de produs.
-                    </p>
-                    <button className="price-sync__all" onClick={() => setPickNew(pickNew.size === newProducts.length ? new Set() : new Set(newProducts.map((n) => n.sku)))}>
-                      {pickNew.size === newProducts.length ? "Deselecteaza tot" : "Selecteaza tot"}
-                    </button>
-                    <div className="price-sync__list">
-                      {newProducts.map((n) => (
-                        <label key={n.sku} className="price-sync__row">
-                          <input type="checkbox" checked={pickNew.has(n.sku)} onChange={() => toggleStr(pickNew, n.sku, setPickNew)} />
-                          <span className="price-sync__name">
-                            <a href={n.url} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()}>{n.name}</a> &middot; {n.sku}
-                          </span>
-                          <span className="price-sync__cat">{n.category || "fara categorie"}</span>
-                          <span className="price-sync__new">{n.price != null ? `${Math.ceil(n.price)} RON` : "—"}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </>
-                )
-              )}
-
-              {tab === "missing" && (
-                missingProducts.length === 0 ? <p className="price-sync__lead">Toate produsele noastre exista si la furnizor.</p> : (
-                  <>
-                    <p className="price-sync__lead">
-                      Nu apar in listarile furnizorului. Atentie la cele marcate
-                      &bdquo;probabil redenumit&rdquo;: furnizorul a schimbat codul (4000236K &rarr; 4000236),
-                      deci produsul apare si in tabul &bdquo;Noi la furnizor&rdquo; &mdash; nu le sterge, ca sa
-                      nu pierzi pagina si link-urile indexate. De aceea implicit doar le marcam indisponibile.
-                    </p>
-                    <div className="price-sync__mode">
-                      <label>
-                        <input type="radio" checked={missingMode === "out_of_stock"} onChange={() => setMissingMode("out_of_stock")} />
-                        Marcheaza indisponibil (pastreaza pagina si link-urile)
-                      </label>
-                      <label>
-                        <input type="radio" checked={missingMode === "delete"} onChange={() => setMissingMode("delete")} />
-                        Sterge definitiv
-                      </label>
-                    </div>
-                    <button className="price-sync__all" onClick={() => setPickMissing(pickMissing.size === missingProducts.length ? new Set() : new Set(missingProducts.map((m) => m.id)))}>
-                      {pickMissing.size === missingProducts.length ? "Deselecteaza tot" : "Selecteaza tot"}
-                    </button>
-                    <div className="price-sync__list">
-                      {missingProducts.map((m) => (
-                        <label key={m.id} className="price-sync__row">
-                          <input type="checkbox" checked={pickMissing.has(m.id)} onChange={() => toggleNum(pickMissing, m.id, setPickMissing)} />
-                          <span className="price-sync__name">{m.name} &middot; {m.sku}</span>
-                          <span className="price-sync__cat">
-                            {m.renamedTo
-                              ? `probabil redenumit in ${m.renamedTo}`
-                              : m.alreadyOut ? "deja indisponibil" : ""}
-                          </span>
-                          <span className="price-sync__old">{m.price != null ? `${Math.ceil(Number(m.price))} RON` : "—"}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </>
-                )
-              )}
-
-              <div className="price-sync__actions">
-                <button className="admin-add-btn" onClick={apply} disabled={totalPicked === 0}>
-                  Aplica {totalPicked > 0 ? `(${totalPicked})` : ""}
-                </button>
-                <button className="admin-inline-btn" onClick={onClose}>Renunta</button>
-                <span className="price-sync__picked">
-                  {pickPrices.size} preturi &middot; {pickNew.size} noi &middot; {pickMissing.size} {missingMode === "delete" ? "de sters" : "indisponibile"}
-                </span>
-              </div>
-            </>
-          )}
-
-          {phase === "applied" && summary && (
-            <>
-              <p className="price-sync__lead">
-                Gata: <strong>{summary.pricesUpdated}</strong> preturi actualizate,{" "}
-                <strong>{summary.newCreated}</strong> produse noi create,{" "}
-                <strong>{summary.missingHandled}</strong> {missingMode === "delete" ? "sterse" : "marcate indisponibil"}.
-              </p>
-              <button className="admin-inline-btn" onClick={onClose}>Inchide</button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
   );
 }
 
