@@ -3116,10 +3116,14 @@ h2.eyebrow { margin: 0 0 14px; }
 /* ===== GROWTH LAYER — accessibility, consent, announcement, floating CTA, trust pages ===== */
 
 /* a11y: skip link + visually hidden */
+/* Link de sarire la continut, pentru navigarea de la tastatura. Se vede doar
+   cand ajungi pe el cu Tab. Ascunderea se face cu translate, nu cu `top: -40px`:
+   elementul are 46px inaltime, deci 6px ii ramaneau vizibili in coltul de sus. */
 .skip-link {
   position: absolute;
-  top: -40px;
+  top: 8px;
   left: 8px;
+  transform: translateY(-200%);
   background: var(--color-primary);
   color: #fff;
   padding: 10px 14px;
@@ -3127,9 +3131,9 @@ h2.eyebrow { margin: 0 0 14px; }
   text-decoration: none;
   font-weight: 600;
   z-index: 9999;
-  transition: top 0.15s ease;
+  transition: transform 0.15s ease;
 }
-.skip-link:focus { top: 8px; outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.skip-link:focus { transform: translateY(0); outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .sr-only {
   position: absolute;
   width: 1px;
