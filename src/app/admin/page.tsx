@@ -62,6 +62,8 @@ interface OrderProductInfo {
   /** URL-ul original de pe mysnep, de unde a fost importat produsul. */
   source_url?: string | null;
   category_slugs?: string[] | null;
+  r2_image_url?: string | null;
+  image_url?: string | null;
 }
 
 /** Pune punctele singur pe masura ce se tasteaza: 01011990 -> 01.01.1990 */
@@ -2957,49 +2959,67 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
   const productUrl = productSlug && productCategory ? `/produse/${productCategory}/${productSlug}` : "";
   const productSku = productInfo?.sku || "";
   const productSourceUrl = productInfo?.source_url || "";
+  const productImage = productInfo?.r2_image_url || productInfo?.image_url || "";
 
   if (!editing) {
     return (
       <>
-        {/* Product name above details — deschide produsul de pe site intr-un tab nou */}
-        {productName && (
-          <div style={{ marginBottom: 8 }}>
-            {productUrl ? (
-              <a
-                href={productUrl}
-                target="_blank"
-                rel="noopener"
-                style={{ fontSize: "1rem", fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}
-                title="Deschide produsul pe site"
-              >
-                {productName}
-              </a>
-            ) : (
-              <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--color-primary)" }}>{productName}</span>
-            )}
-            {productSku && (
-              <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: 2 }}>
-                Cod:{" "}
-                {productSourceUrl ? (
+        {/*
+          Antetul comenzii: miniatura produsului in stanga, iar in dreapta numele
+          (link catre produsul de pe site), codul (link catre originalul de pe
+          mysnep) si randul "Detalii". Imaginea se intinde pe toate trei, de aceea
+          butonul de editare sta pe acelasi rand cu "Detalii", nu deasupra.
+        */}
+        <div className="ord-head">
+          {productImage && (
+            <img
+              className="ord-head__thumb"
+              src={productImage}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+          )}
+          <div className="ord-head__col">
+            {productName && (
+              <>
+                {productUrl ? (
                   <a
-                    href={productSourceUrl}
+                    className="ord-head__name"
+                    href={productUrl}
                     target="_blank"
                     rel="noopener"
-                    style={{ color: "var(--color-accent)", fontWeight: 700 }}
-                    title="Deschide produsul original pe mysnep"
+                    title="Deschide produsul pe site"
                   >
-                    {productSku}
+                    {productName}
                   </a>
                 ) : (
-                  <strong>{productSku}</strong>
+                  <span className="ord-head__name">{productName}</span>
                 )}
-              </div>
+                {productSku && (
+                  <div className="ord-head__sku">
+                    Cod:{" "}
+                    {productSourceUrl ? (
+                      <a
+                        href={productSourceUrl}
+                        target="_blank"
+                        rel="noopener"
+                        title="Deschide produsul original pe mysnep"
+                      >
+                        {productSku}
+                      </a>
+                    ) : (
+                      <strong>{productSku}</strong>
+                    )}
+                  </div>
+                )}
+              </>
             )}
+            <div className="ord-head__row">
+              <h3>Detalii</h3>
+              <button className="admin-action-btn" onClick={() => setEditing(true)} title="Editeaza">✎</button>
+            </div>
           </div>
-        )}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3>Detalii</h3>
-          <button className="admin-action-btn" onClick={() => setEditing(true)} title="Editeaza">✎</button>
         </div>
         <table><tbody>
           <tr><td>Nume</td><td>{order.customer_name}</td></tr>

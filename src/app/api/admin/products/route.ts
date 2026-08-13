@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   const slug = searchParams.get("slug");
   if (!id && !slug) return NextResponse.json({ error: "Missing id or slug" }, { status: 400 });
 
-  const query = supabase.from("products").select("id, name, slug, sku, source_url, category_slugs").limit(1);
+  const query = supabase.from("products").select("id, name, slug, sku, source_url, category_slugs, r2_image_url, image_url").limit(1);
   const { data, error } = id
     ? await query.eq("id", Number(id)).maybeSingle()
     : await query.eq("slug", slug!).maybeSingle();

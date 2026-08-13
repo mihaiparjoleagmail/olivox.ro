@@ -2650,3 +2650,73 @@
 }
 .sync-summary a { color: var(--color-primary); }
 .sync-summary summary { cursor: pointer; }
+
+/* Antetul din detaliile comenzii: miniatura + nume/cod/Detalii */
+.ord-head {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.ord-head__thumb {
+  /* Se intinde pe inaltimea coloanei din dreapta (nume + cod + "Detalii"),
+     de aceea `align-self: stretch` si latime egala cu inaltimea. */
+  align-self: stretch;
+  width: 74px;
+  min-width: 74px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+}
+.ord-head__col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+.ord-head__name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+  line-height: 1.2;
+}
+.ord-head__name:hover { text-decoration: underline; }
+.ord-head__sku { font-size: 0.75rem; color: var(--color-text-muted); }
+.ord-head__sku a { color: var(--color-accent); font-weight: 700; }
+.ord-head__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+.ord-head__row h3 { margin: 0; }
+
+/* ===== FONT ADMIN =====
+   globals.css pune serif (Cormorant Garamond) pe h1/h2. Fontul are cifre de
+   stil vechi: in "Comanda #17 — 13.08.2026 14:09" cifrele ies de inaltimi
+   diferite, unele sub linia de baza — greu de citit intr-un panou de lucru.
+   Adminul foloseste peste tot fontul sans, cu cifre aliniate. */
+.admin-wrap h1, .admin-wrap h2, .admin-wrap h3, .admin-wrap h4,
+.admin-login h1, .admin-login p,
+.ot-page h2, .ot-page__header h2,
+.ot-modal h2, .ot-modal__header h2,
+.admin-settings h3, .admin-edit-header h1,
+.sync-head h2 {
+  font-family: var(--font);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+/* Cifre de aceeasi inaltime si latime, ca sumele si datele sa se citeasca
+   in coloana fara sa danseze. */
+.admin-wrap,
+.ot-page,
+.ot-modal {
+  font-variant-numeric: lining-nums tabular-nums;
+}
