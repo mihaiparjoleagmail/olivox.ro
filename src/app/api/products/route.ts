@@ -1,6 +1,20 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
+/**
+ * Text pregatit pentru cautare: fara diacritice, majuscule uniforme, doar
+ * litere si cifre. "VINCÌ" si "vinci" ajung amandoua "VINCI"; "Ceai Verde"
+ * ajunge "CEAI VERDE".
+ */
+function normalizeSearch(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim();
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
@@ -51,11 +65,39 @@ export async function GET(request: Request) {
 
   const searchTerm = searchParams.get("search");
   if (searchTerm) {
-    // Split into words and match ALL (AND logic)
-    const words = searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
-    for (const word of words) {
-      query = query.ilike("name", `%${word}%`);
+    /*
+     * Cautarea acopera si numele, si codul ("4000342" trebuie sa dea VINCÌ), si
+     * trebuie sa ignore diacriticele ("vinci" trebuie sa dea "VINCÌ").
+     *
+     * `ilike` din Postgres ignora majusculele, dar nu si diacriticele, iar
+     * `unaccent` ar cere o extensie si un index adaugate in baza. Catalogul are
+     * cateva sute de produse, deci filtram in cod: citim doar id + nume + cod,
+     * normalizam ambele parti si cerem apoi randurile potrivite. Sortarea si
+     * paginarea raman pe server.
+     */
+    const words = normalizeSearch(searchTerm).split(" ").filter(Boolean);
+    if (words.length === 0) {
+      return NextResponse.json({ products: [], total: 0, page, per_page: perPage, total_pages: 0 });
     }
+
+    let indexQuery = supabase.from("products").select("id, name, sku").limit(5000);
+    if (category) indexQuery = indexQuery.contains("category_slugs", [category]);
+    const { data: index, error: indexError } = await indexQuery;
+    if (indexError) {
+      return NextResponse.json({ products: [], total: 0 }, { status: 500 });
+    }
+
+    const matched = (index || [])
+      .filter((p) => {
+        const haystack = normalizeSearch(`${p.name || ""} ${p.sku || ""}`);
+        return words.every((w) => haystack.includes(w));
+      })
+      .map((p) => p.id);
+
+    if (matched.length === 0) {
+      return NextResponse.json({ products: [], total: 0, page, per_page: perPage, total_pages: 0 });
+    }
+    query = query.in("id", matched);
   }
 
   // Sortare din admin: implicit dupa id, dar si dupa data importului, ca sa se

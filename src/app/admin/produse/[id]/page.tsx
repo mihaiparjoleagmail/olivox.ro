@@ -138,9 +138,27 @@ export default function EditProductPage() {
         <h1>Editeaza: {prod.name}</h1>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {saved && <span style={{ color: "var(--color-success)", fontSize: "0.82rem", fontWeight: 600 }}>Salvat!</span>}
-          {prod && selectedSlugs.size > 0 && (
-            <a className="admin-back-btn" href={`/produse/${Array.from(selectedSlugs)[0]}/${prod.slug}`} target="_blank" rel="noopener">Vezi produs</a>
-          )}
+          {prod && (selectedSlugs.size > 0 ? (
+            <a
+              className="admin-back-btn"
+              href={`/produse/${Array.from(selectedSlugs)[0]}/${prod.slug}`}
+              target="_blank"
+              rel="noopener"
+              title="Deschide pagina produsului pe site"
+            >
+              Vezi produsul in site ↗
+            </a>
+          ) : (
+            // Fara categorie produsul nu are pagina publica — URL-ul e
+            // /produse/<categorie>/<slug>. Spunem asta, nu ascundem butonul.
+            <span
+              className="admin-back-btn"
+              style={{ opacity: 0.5, cursor: "not-allowed" }}
+              title="Produsul nu are inca o categorie, deci nu are pagina pe site. Alege una mai jos si salveaza."
+            >
+              Vezi produsul in site ↗
+            </span>
+          ))}
           <button className="admin-add-btn" onClick={handleSave} disabled={saving}>{saving ? "Se salveaza..." : "Salveaza"}</button>
         </div>
       </div>

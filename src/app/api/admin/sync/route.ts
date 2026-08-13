@@ -88,12 +88,14 @@ export async function GET(request: Request) {
  */
 function buildCategoryMap(
   ours: ProductRow[],
-  supplier: Map<string, SupplierProduct>
+  match: (p: ProductRow) => SupplierProduct | null
 ): Record<string, string> {
   const votes: Record<string, Record<string, number>> = {};
   for (const p of ours) {
-    if (!p.sku) continue;
-    const sup = supplier.get(String(p.sku));
+    // Aceeasi potrivire ca la comparatie (nume, apoi cod). Cautarea directa
+    // dupa cod in harta furnizorului nu mai merge: cheia ei include si numele,
+    // ca sa incapa variantele de marime cu acelasi cod.
+    const sup = match(p);
     if (!sup) continue;
     for (const slug of p.category_slugs || []) {
       votes[sup.category] ||= {};
@@ -198,8 +200,7 @@ export async function POST(request: Request) {
         };
 
         const matchedSupplier = new Set<string>();
-
-        const categoryMap = buildCategoryMap(ours, supplier);
+        const categoryMap = buildCategoryMap(ours, matchOurs);
 
         const priceChanges: Array<{
           id: number; name: string; sku: string;

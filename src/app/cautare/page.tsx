@@ -14,6 +14,7 @@ interface Product {
   image_url: string;
   price: number;
   category_slugs: string[];
+  sku?: string | null;
 }
 
 function SearchContent() {
@@ -71,6 +72,8 @@ function SearchContent() {
               </div>
               <div className="product-card__info">
                 <h3 className="product-card__name">{prod.name}</h3>
+                {/* Codul, ca sa se vada de ce a iesit produsul cand cauti dupa cod. */}
+                {prod.sku && <span className="product-card__sku">Cod: {prod.sku}</span>}
                 <div className="product-card__bottom">
                   <span className="product-card__price">{displayPrice(prod.price)} RON</span>
                   <div className="product-card__stars">

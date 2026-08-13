@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import { cleanContentHtml, cleanContentText } from "@/lib/html-clean";
 
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "olivox2026!";
@@ -46,8 +47,8 @@ export async function POST(request: Request) {
     price: body.price || 0,
     category_slugs: body.category_slugs || [],
     template: body.template || "generic",
-    short_description: body.short_description || "",
-    description: body.description || "",
+    short_description: cleanContentText(body.short_description),
+    description: cleanContentHtml(body.description),
     meta_title: body.meta_title || "",
     meta_description: body.meta_description || "",
     keywords: body.keywords || "",
@@ -68,6 +69,13 @@ export async function PATCH(request: Request) {
   const update: Record<string, unknown> = {};
   for (const key of ["name", "slug", "price", "image_url", "r2_image_url", "print_image_url", "short_description", "description", "category_slugs", "template", "meta_title", "meta_description", "keywords", "custom_fields", "addon_group_ids", "source_url", "sku", "stock_status"]) {
     if (fields[key] !== undefined) update[key] = fields[key];
+  }
+  // Editorul din admin scrie spatiile ca &nbsp;. Curatam aici, ca sa fie curat
+  // indiferent daca salvarea vine din editor, din import sau din alt script.
+  if (typeof update.description === "string") update.description = cleanContentHtml(update.description);
+  if (typeof update.short_description === "string") update.short_description = cleanContentText(update.short_description);
+  for (const k of ["ingredients", "usage_info", "warnings", "certifications"]) {
+    if (typeof update[k] === "string") update[k] = cleanContentHtml(update[k] as string);
   }
   const { error } = await supabase.from("products").update(update).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

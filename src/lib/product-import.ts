@@ -15,6 +15,7 @@
 import { supabaseAdmin as supabase } from "./supabase-admin";
 import { fetchProductDetails } from "./mysnep";
 import { uploadToR2 } from "./r2";
+import { cleanContentHtml, cleanContentText } from "./html-clean";
 
 /** Acelasi slugify ca in scripts/scrape-mysnep.ts, ca URL-urile sa fie in acelasi stil. */
 export function slugify(s: string): string {
@@ -99,7 +100,8 @@ export interface ImportCandidate {
   url: string;
   price?: number | null;
   category?: string;
-  available?: boolean;
+  /** Din listarea furnizorului; null cand nu scrie nimic acolo. */
+  available?: boolean | null;
 }
 
 export interface ImportOutcome {
@@ -110,6 +112,17 @@ export interface ImportOutcome {
   /** Ce nu s-a putut completa, ca sa se stie unde e nevoie de interventie. */
   warnings: string[];
   error?: string;
+}
+
+/**
+ * Ordinea surselor pentru stoc: intai ce spune listarea (de incredere), apoi
+ * pagina de produs, iar daca niciuna nu spune nimic — pe stoc.
+ */
+function stockStatusFor(fromListing?: boolean | null, fromPage?: boolean | null): string {
+  if (fromListing === false) return "out_of_stock";
+  if (fromListing === true) return "in_stock";
+  if (fromPage === false) return "out_of_stock";
+  return "in_stock";
 }
 
 /** Slug liber: daca exista deja unul identic, lipim codul la coada. */
@@ -188,16 +201,20 @@ export async function importProduct(
       old_price: null,
       quantity: d.quantity || null,
       points: d.points ?? 0,
-      stock_status: candidate.available === false || !d.available ? "out_of_stock" : "in_stock",
+      // Disponibilitatea vine din listare (candidate), unde furnizorul chiar o
+      // scrie. Pagina de produs NU contine marcajul "disponibil", deci acolo
+      // citirea da null — iar `!null` facea ca tot ce se importa sa intre
+      // "indisponibil". Necunoscut inseamna pe stoc, nu invers.
+      stock_status: stockStatusFor(candidate.available, d.available),
       image_url: d.imageUrl,
       r2_image_url: r2Image || d.imageUrl,
       gallery: [],
-      description: d.description,
-      short_description: d.shortDescription,
-      ingredients: d.ingredients || null,
-      usage_info: d.usageInfo || null,
-      warnings: d.warnings || null,
-      certifications: d.certifications || null,
+      description: cleanContentHtml(d.description),
+      short_description: cleanContentText(d.shortDescription),
+      ingredients: cleanContentHtml(d.ingredients) || null,
+      usage_info: cleanContentHtml(d.usageInfo) || null,
+      warnings: cleanContentHtml(d.warnings) || null,
+      certifications: cleanContentHtml(d.certifications) || null,
       datasheet_url: d.datasheetUrl,
       datasheet_r2_url: r2Datasheet,
       category_slugs: category ? [category] : [],

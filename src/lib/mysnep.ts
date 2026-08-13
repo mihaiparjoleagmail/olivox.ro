@@ -509,6 +509,8 @@ function cleanHtml(raw: string | null): string {
   if (!raw) return "";
   const out = decodeEntities(
     raw
+      // Continutul vine invelit in 2-3 div-uri de layout; pastram doar textul.
+      .replace(/<\/?div[^>]*>/gi, "")
       .replace(/<script[\s\S]*?<\/script>/gi, "")
       .replace(/<style[\s\S]*?<\/style>/gi, "")
       // <p> imbricate in <p>, cum vin de la ei — le aplatizam

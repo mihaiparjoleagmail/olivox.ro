@@ -79,9 +79,9 @@ export default async function HomePage() {
                     <Image
                       src={cat.image_url}
                       alt={cat.name}
-                      width={320}
-                      height={200}
-                      sizes="(max-width: 768px) 50vw, 220px"
+                      width={400}
+                      height={400}
+                      sizes="(max-width: 768px) 50vw, (max-width: 1400px) 25vw, 340px"
                       className="cat-page-card__img"
                       priority={i < 2}
                       loading={i < 2 ? undefined : "lazy"}
@@ -113,9 +113,9 @@ export default async function HomePage() {
                       <Image
                         src={imgUrl}
                         alt={prod.name}
-                        width={320}
-                        height={320}
-                        sizes="(max-width: 768px) 50vw, 220px"
+                        width={400}
+                        height={400}
+                        sizes="(max-width: 768px) 50vw, (max-width: 1400px) 25vw, 340px"
                         className="product-card__img"
                         loading={i < 4 ? "eager" : "lazy"}
                       />
