@@ -2761,43 +2761,12 @@ a.pagination__btn {
 h2.eyebrow { margin: 0 0 14px; }
 
 /* Internal linking block at the bottom of a product page */
-.pd-related { margin-top: 26px; }
-.pd-related__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
-@media (min-width: 700px) {
-  .pd-related__list { grid-template-columns: repeat(2, 1fr); }
-}
-.pd-related__link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 11px 14px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  text-decoration: none;
-  transition: all var(--transition);
-}
-.pd-related__link:hover { border-color: var(--color-primary); background: var(--color-bg-soft); }
-.pd-related__name {
-  color: var(--color-text);
-  font-size: 0.85rem;
-  font-weight: 600;
-  line-height: 1.35;
-}
-.pd-related__price {
-  color: var(--color-primary);
-  font-size: 0.85rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
+/* Sectiunea de produse inrudite foloseste cardurile din pagina de categorie
+   (.products-grid / .product-card); regulile vechi de lista nume+pret au fost
+   scoase, nu mai are ce le folosi. */
+.pd-related { margin-top: 34px; }
+.pd-related .eyebrow { display: block; margin-bottom: 14px; }
+
 .pd-disclaimer {
   margin-top: 24px;
   padding: 14px 16px;
