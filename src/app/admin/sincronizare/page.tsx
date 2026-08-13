@@ -50,7 +50,7 @@ export default function SincronizarePage() {
   const [pickMissing, setPickMissing] = useState<Set<number>>(new Set());
   const [missingMode, setMissingMode] = useState<"out_of_stock" | "delete">("out_of_stock");
   const [errorMsg, setErrorMsg] = useState("");
-  const [summary, setSummary] = useState<{ pricesUpdated: number; stockUpdated: number; newCreated: number; missingHandled: number; warnings: Array<{ name: string; warnings: string[] }>; failed: Array<{ ref: string; error: string }> } | null>(null);
+  const [summary, setSummary] = useState<{ pricesUpdated: number; stockUpdated: number; newCreated: number; alreadyThere: number; missingHandled: number; warnings: Array<{ name: string; warnings: string[] }>; failed: Array<{ ref: string; error: string }> } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -216,6 +216,7 @@ export default function SincronizarePage() {
           <strong>{summary.stockUpdated}</strong> stocuri corectate &middot;{" "}
           <strong>{summary.newCreated}</strong> produse importate &middot;{" "}
           <strong>{summary.missingHandled}</strong> {missingMode === "delete" ? "sterse" : "marcate indisponibil"}
+          {summary.alreadyThere > 0 && <> &middot; <strong>{summary.alreadyThere}</strong> erau deja in catalog</>}
           {summary.newCreated > 0 && (
             <> &middot; <a href="/admin?tab=produse">vezi produsele importate</a></>
           )}

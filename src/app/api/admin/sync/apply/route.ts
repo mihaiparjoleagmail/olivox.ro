@@ -28,6 +28,37 @@ async function getMysnepCookies(): Promise<string> {
 }
 
 /**
+ * Scoate din scanul salvat randurile care tocmai au fost rezolvate. Fara asta,
+ * la o reincarcare a paginii reapareau produse deja importate — si importul lor
+ * pica pe cheia duplicata de source_id.
+ */
+async function pruneSavedScan(applied: {
+  priceIds: number[]; stockIds: number[]; missingIds: number[];
+  newSkus: string[]; missingMode: "out_of_stock" | "delete";
+}): Promise<void> {
+  const { data } = await supabase.from("settings").select("value").eq("key", "mysnep_sync").maybeSingle();
+  if (!data?.value) return;
+  let scan: Record<string, unknown>;
+  try { scan = JSON.parse(data.value); } catch { return; }
+
+  const price = new Set(applied.priceIds);
+  const stockSet = new Set(applied.stockIds);
+  const missingSet = new Set(applied.missingIds);
+  const skus = new Set(applied.newSkus);
+
+  scan.priceChanges = ((scan.priceChanges as Array<{ id: number }>) || []).filter((c) => !price.has(c.id));
+  scan.stockChanges = ((scan.stockChanges as Array<{ id: number }>) || []).filter((c) => !stockSet.has(c.id));
+  scan.newProducts = ((scan.newProducts as Array<{ sku: string }>) || []).filter((n) => !skus.has(n.sku));
+  const missingList = (scan.missingProducts as Array<{ id: number; alreadyOut?: boolean }>) || [];
+  scan.missingProducts =
+    applied.missingMode === "delete"
+      ? missingList.filter((m) => !missingSet.has(m.id))
+      : missingList.map((m) => (missingSet.has(m.id) ? { ...m, alreadyOut: true } : m));
+
+  await supabase.from("settings").upsert({ key: "mysnep_sync", value: JSON.stringify(scan) }, { onConflict: "key" });
+}
+
+/**
  * Scrie doar ce a bifat utilizatorul. Raspunde NDJSON, pentru ca importul
  * produselor noi e lent (o pagina + imagine + PDF pe R2 pentru fiecare) si
  * trebuie sa se vada progresul.
@@ -70,6 +101,7 @@ export async function POST(request: Request) {
         stockUpdated: 0,
         missingHandled: 0,
         newCreated: 0,
+        alreadyThere: 0,
         warnings: [] as Array<{ name: string; warnings: string[] }>,
         failed: [] as Array<{ ref: string; error: string }>,
       };
@@ -119,11 +151,22 @@ export async function POST(request: Request) {
           if (outcome.ok) {
             result.newCreated++;
             if (outcome.warnings.length) result.warnings.push({ name: outcome.name, warnings: outcome.warnings });
+          } else if (outcome.skipped) {
+            // Era deja in catalog — nu e o eroare, doar nu mai e nimic de facut.
+            result.alreadyThere++;
           } else {
             result.failed.push({ ref: `import ${outcome.sku}`, error: outcome.error || "necunoscut" });
           }
           send({ type: "progress", done: ++done, total, stage: "import", label: n.name });
         }
+
+        await pruneSavedScan({
+          priceIds: prices.map((c: { id: number }) => Number(c?.id)).filter(Boolean),
+          stockIds: stock.map((c: { id: number }) => Number(c?.id)).filter(Boolean),
+          missingIds: missing.map((m: { id: number }) => Number(m?.id)).filter(Boolean),
+          newSkus: newOnes.map((n) => String(n.sku)),
+          missingMode,
+        });
 
         send({ type: "done", ...result });
       } catch (e) {

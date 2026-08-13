@@ -108,6 +108,8 @@ export interface ImportOutcome {
   sku: string;
   name: string;
   ok: boolean;
+  /** Exista deja in catalog — nu e o eroare, doar nu mai e nimic de facut. */
+  skipped?: boolean;
   productId?: number;
   /** Ce nu s-a putut completa, ca sa se stie unde e nevoie de interventie. */
   warnings: string[];
@@ -123,6 +125,14 @@ function stockStatusFor(fromListing?: boolean | null, fromPage?: boolean | null)
   if (fromListing === true) return "in_stock";
   if (fromPage === false) return "out_of_stock";
   return "in_stock";
+}
+
+/** Id-ul produsului existent cu acelasi cod sau aceeasi sursa, daca exista. */
+async function findExisting(sku: string, sourceId: string): Promise<number | null> {
+  const filters = [`sku.eq.${sku}`];
+  if (sourceId) filters.push(`source_id.eq.${sourceId}`);
+  const { data } = await supabase.from("products").select("id").or(filters.join(",")).limit(1).maybeSingle();
+  return data?.id ?? null;
 }
 
 /** Slug liber: daca exista deja unul identic, lipim codul la coada. */
@@ -167,6 +177,15 @@ export async function importProduct(
     return { sku, name, ok: false, warnings, error: "lipseste numele sau codul" };
   }
 
+  // Produsul poate fi deja in catalog (importat intr-o rulare anterioara, sau
+  // scanul din care s-a pornit e mai vechi decat catalogul). Verificam intai,
+  // ca sa nu iasa eroarea de cheie duplicata pe source_id.
+  const sourceId = /-([A-Z]\d+)\.html$/i.exec(candidate.url)?.[1] || "";
+  const existing = await findExisting(sku, sourceId);
+  if (existing) {
+    return { sku, name, ok: false, skipped: true, warnings, error: `exista deja in catalog (#${existing})` };
+  }
+
   const fetched = await fetchProductDetails(candidate.url, cookies);
   if (!fetched.ok || !fetched.details) {
     return { sku, name, ok: false, warnings, error: `pagina produsului: ${fetched.reason}` };
@@ -195,7 +214,7 @@ export async function importProduct(
       slug,
       sku: d.sku || sku,
       source_url: candidate.url,
-      source_id: /-([A-Z]\d+)\.html$/i.exec(candidate.url)?.[1] || "",
+      source_id: sourceId,
       price,
       currency: "RON",
       old_price: null,
