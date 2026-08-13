@@ -29,9 +29,21 @@ export default function Footer() {
 
       <div className="footer-grid">
         <div className="footer-col">
-          <div className="footer-logo" dangerouslySetInnerHTML={{ __html: c.logoHtml }} />
+          <div className="footer-logo">
+            <img
+              className="footer-logo__mark"
+              src="/logo-64.webp"
+              srcSet="/logo-64.webp 1x, /logo.webp 2x"
+              alt=""
+              width={40}
+              height={40}
+              loading="lazy"
+              decoding="async"
+            />
+            <span dangerouslySetInnerHTML={{ __html: c.logoHtml }} />
+          </div>
           <p className="footer-company">{c.companyName}</p>
-          <p className="footer-detail">CIF: {c.companyCIF}</p>
+          <p className="footer-detail">{c.companyCIF}</p>
           <p className="footer-detail">{c.companyAddress}</p>
           <p className="footer-detail">{c.companyLocality}, {c.companyCounty}, Romania</p>
         </div>
@@ -99,7 +111,9 @@ export default function Footer() {
         telephone: `+4${c.phone.replace(/^0/, "")}`,
         email: c.emailOrders,
         address: { "@type": "PostalAddress", streetAddress: c.companyAddress, addressLocality: c.companyLocality, addressRegion: c.companyCounty, addressCountry: "RO" },
-        taxID: c.companyCIF,
+        // Codul de distribuitor Snep, nu un cod fiscal — de aceea `identifier`,
+        // nu `taxID`. Trimitem doar cifrele, fara prefixul afisat in footer.
+        identifier: c.companyCIF.replace(/^\D+/, "").trim() || undefined,
       })}} />
     </footer>
   );

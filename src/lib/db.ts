@@ -19,8 +19,24 @@ export interface Order {
   locker_id?: string | null;
   order_source?: string;
   custom_field_values?: Record<string, unknown>;
+  /** Data nasterii clientului, in format dd.mm.yyyy (text, exact cum e ceruta in formular). */
+  birth_date?: string;
+  postal_code?: string;
   created_at: string;
 }
+
+/**
+ * Coloane adaugate prin migrari din scripts/sql/ care pot lipsi inca din baza.
+ * Daca insertul pica pentru ca una lipseste, o scoatem si reincercam, ca sa nu
+ * pierdem comanda din cauza schemei.
+ */
+const PENDING_MIGRATION_COLUMNS = ["shipping_cost", "birth_date", "postal_code"] as const;
+
+const MIGRATION_HINT: Record<string, string> = {
+  shipping_cost: "scripts/sql/add-shipping-cost.sql",
+  birth_date: "scripts/sql/add-birthdate-postalcode.sql",
+  postal_code: "scripts/sql/add-birthdate-postalcode.sql",
+};
 
 export async function createOrder(order: {
   product_id?: number | null;
@@ -38,32 +54,41 @@ export async function createOrder(order: {
   locker_id?: string | null;
   order_source?: string;
   custom_field_values?: Record<string, unknown>;
+  birth_date?: string;
+  postal_code?: string;
 }): Promise<Order> {
-  const { data, error } = await supabase
-    .from("orders")
-    .insert({ ...order, status: "in procesare" })
-    .select()
-    .single();
+  let payload: Record<string, unknown> = { ...order, status: "in procesare" };
+  const dropped = new Set<string>();
 
-  if (!error) return data;
-
-  // Migrarea scripts/sql/add-shipping-cost.sql nu a fost inca rulata: salvam
-  // comanda fara coloana noua, ca sa nu pierdem comenzi din cauza schemei.
-  const missingColumn = /shipping_cost/i.test(error.message || "") || error.code === "PGRST204" || error.code === "42703";
-  if (missingColumn && order.shipping_cost != null) {
-    console.error("orders.shipping_cost lipseste — ruleaza scripts/sql/add-shipping-cost.sql");
-    const { shipping_cost: _omit, ...withoutShipping } = order;
-    void _omit;
-    const retry = await supabase
+  // Cate o reincercare pentru fiecare coloana care poate lipsi din schema.
+  for (let attempt = 0; attempt <= PENDING_MIGRATION_COLUMNS.length; attempt++) {
+    const { data, error } = await supabase
       .from("orders")
-      .insert({ ...withoutShipping, status: "in procesare" })
+      .insert(payload)
       .select()
       .single();
-    if (retry.error) throw retry.error;
-    return retry.data;
+
+    if (!error) return data;
+
+    const schemaError = error.code === "PGRST204" || error.code === "42703";
+    if (!schemaError) throw error;
+
+    // Scoatem coloana numita in eroare; daca Supabase nu o numeste, scoatem
+    // prima candidata ramasa si mai incercam o data.
+    const named = PENDING_MIGRATION_COLUMNS.find(
+      (c) => !dropped.has(c) && c in payload && new RegExp(c, "i").test(error.message || "")
+    );
+    const toDrop = named || PENDING_MIGRATION_COLUMNS.find((c) => !dropped.has(c) && c in payload);
+    if (!toDrop) throw error;
+
+    console.error(`orders.${toDrop} lipseste — ruleaza ${MIGRATION_HINT[toDrop]}`);
+    dropped.add(toDrop);
+    const { [toDrop]: _omit, ...rest } = payload;
+    void _omit;
+    payload = rest;
   }
 
-  throw error;
+  throw new Error("Comanda nu a putut fi salvata: schema orders nu se potriveste.");
 }
 
 export async function getOrders(): Promise<Order[]> {

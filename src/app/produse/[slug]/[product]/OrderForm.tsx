@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { resolveShippingCost, type ShippingTier } from "@/lib/shipping";
+import { displayPrice, lineTotal } from "@/lib/price";
 
 interface BeaconPayload {
   customer_name: string;
@@ -14,6 +15,26 @@ interface BeaconPayload {
   product_slug: string;
   url: string;
   snapshot: Record<string, unknown>;
+}
+
+/** Pune punctele singur pe masura ce se tasteaza: 01011990 -> 01.01.1990 */
+function maskBirthDate(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}.${digits.slice(2, 4)}.${digits.slice(4)}`;
+}
+
+/** Aceeasi regula ca pe server (/api/orders): dd.mm.yyyy si data sa existe. */
+function isValidBirthDate(value: string): boolean {
+  const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+  if (!m) return false;
+  const day = Number(m[1]);
+  const month = Number(m[2]);
+  const year = Number(m[3]);
+  const d = new Date(year, month - 1, day);
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return false;
+  return d <= new Date() && year >= 1900;
 }
 
 export interface OrderFormProduct {
@@ -42,6 +63,8 @@ export default function OrderForm({
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [strada, setStrada] = useState("");
   const [judetId, setJudetId] = useState("");
   const [judetName, setJudetName] = useState("");
@@ -64,15 +87,17 @@ export default function OrderForm({
   const inStock = product.inStock;
   // Transportul depinde de valoarea produselor, deci se recalculeaza la fiecare
   // schimbare de cantitate. Aceeasi regula ruleaza si pe server, la salvare.
-  const productsTotal = Math.ceil((Number(product.price) || 0) * Number(quantity));
+  // Rotunjim pretul unitar INAINTE de inmultire: pe pagina scrie pretul intreg
+  // pe bucata, deci 2 buc trebuie sa dea exact dublul acelui numar.
+  const productsTotal = lineTotal(product.price, quantity);
   const shipping = resolveShippingCost(productsTotal, { shippingCost, shippingTiers });
   const total = productsTotal + shipping;
 
   useEffect(() => {
     trackEvent("view_item", {
       currency: product.currency,
-      value: Number(product.price) || 0,
-      items: [{ item_id: product.id, item_name: product.name, price: product.price }],
+      value: displayPrice(product.price),
+      items: [{ item_id: product.id, item_name: product.name, price: displayPrice(product.price) }],
     });
   }, [product.id, product.name, product.price, product.currency]);
 
@@ -96,7 +121,7 @@ export default function OrderForm({
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [customerName, customerPhone, customerEmail, strada, localitate, judetName, observations, quantity, success]);
+  }, [customerName, customerPhone, customerEmail, birthDate, postalCode, strada, localitate, judetName, observations, quantity, success]);
 
   // Stable session ID + unload beacon listener.
   useEffect(() => {
@@ -163,8 +188,10 @@ export default function OrderForm({
       url: typeof window !== "undefined" ? window.location.href : "",
       snapshot: {
         quantity,
+        birth_date: birthDate,
+        postal_code: postalCode,
         observations: observations.trim(),
-        unit_price: Number(product.price) || 0,
+        unit_price: displayPrice(product.price),
         currency,
         shipping_cost: shipping,
         total,
@@ -174,6 +201,14 @@ export default function OrderForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isValidBirthDate(birthDate)) {
+      setErrorMsg("Introdu data nașterii în formatul zz.ll.aaaa (ex. 04.09.1985).");
+      return;
+    }
+    if (!/^\d{6}$/.test(postalCode)) {
+      setErrorMsg("Codul poștal trebuie să aibă 6 cifre.");
+      return;
+    }
     setSubmitting(true);
     setErrorMsg("");
     try {
@@ -188,6 +223,8 @@ export default function OrderForm({
           customer_name: customerName,
           customer_phone: customerPhone,
           customer_email: customerEmail,
+          birth_date: birthDate,
+          postal_code: postalCode,
           address: combinedAddress,
           observations,
           // Serverul recalculeaza transportul din setari; le trimitem doar ca fallback.
@@ -205,14 +242,14 @@ export default function OrderForm({
       trackEvent("add_to_cart", {
         currency,
         value: productsTotal,
-        items: [{ item_id: product.id, item_name: product.name, quantity, price: product.price }],
+        items: [{ item_id: product.id, item_name: product.name, quantity, price: displayPrice(product.price) }],
       });
       trackEvent("purchase", {
         transaction_id: orderData?.id ? String(orderData.id) : undefined,
         currency,
         value: total,
         shipping,
-        items: [{ item_id: product.id, item_name: product.name, quantity, price: product.price }],
+        items: [{ item_id: product.id, item_name: product.name, quantity, price: displayPrice(product.price) }],
       });
       setSuccess(true);
       if (sessionIdRef.current) {
@@ -255,9 +292,22 @@ export default function OrderForm({
           <label>Telefon *</label>
           <input type="tel" required value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
         </div>
-        <div className="pd-form__row pd-form__row--full">
+        <div className="pd-form__row">
           <label>Email</label>
           <input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
+        </div>
+        <div className="pd-form__row">
+          <label>Data nașterii *</label>
+          <input
+            type="text"
+            required
+            inputMode="numeric"
+            autoComplete="bday"
+            placeholder="zz.ll.aaaa"
+            maxLength={10}
+            value={birthDate}
+            onChange={(e) => setBirthDate(maskBirthDate(e.target.value))}
+          />
         </div>
         <div className="pd-form__row">
           <label>Județ *</label>
@@ -282,6 +332,19 @@ export default function OrderForm({
         <div className="pd-form__row pd-form__row--full">
           <label>Stradă, număr *</label>
           <input type="text" required value={strada} onChange={(e) => setStrada(e.target.value)} placeholder="Strada, număr, bloc, apartament" />
+        </div>
+        <div className="pd-form__row">
+          <label>Cod poștal *</label>
+          <input
+            type="text"
+            required
+            inputMode="numeric"
+            autoComplete="postal-code"
+            placeholder="6 cifre"
+            maxLength={6}
+            value={postalCode}
+            onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          />
         </div>
         <div className="pd-form__row pd-form__row--full">
           <label>Observatii</label>

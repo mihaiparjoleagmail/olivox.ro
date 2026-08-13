@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getProduct, getCategoryName, stripHtml, truncate } from "./product-data";
 import { getSiteConfig, resolveShippingCost, describeTiers } from "@/lib/site-config";
+import { schemaPrice } from "@/lib/price";
 
 interface Props {
   params: Promise<{ slug: string; product: string }>;
@@ -27,7 +28,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     product.meta_description || plainDesc || `${product.name} — ${product.price} RON. Comanda acum pe olivox.ro.`,
     160
   );
-  const image = product.r2_image_url || product.image_url || "";
+  // Poza produsului ramane og:image-ul acestei pagini; marca olivox e doar
+  // plasa de siguranta pentru produsele fara imagine.
+  const image = product.r2_image_url || product.image_url || "https://olivox.ro/og-default.jpg";
   const url = `https://olivox.ro/produse/${categorySlug}/${productSlug}`;
 
   return {
@@ -38,11 +41,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title, description, url,
       siteName: "olivox.ro", type: "website", locale: "ro_RO",
-      images: image ? [{ url: image, alt: product.name, width: 1200, height: 1200 }] : [],
+      images: [{ url: image, alt: product.name, width: 1200, height: 1200 }],
     },
     twitter: {
       card: "summary_large_image", title, description,
-      images: image ? [image] : [],
+      images: [image],
     },
   };
 }
@@ -60,7 +63,9 @@ export default async function ProductLayout({ params, children }: Props) {
   if (!product) return <>{children}</>;
 
   const url = `https://olivox.ro/produse/${categorySlug}/${productSlug}`;
-  const image = product.r2_image_url || product.image_url || "";
+  // Poza produsului ramane og:image-ul acestei pagini; marca olivox e doar
+  // plasa de siguranta pentru produsele fara imagine.
+  const image = product.r2_image_url || product.image_url || "https://olivox.ro/og-default.jpg";
   const currency = product.currency || "RON";
   const inStock = product.stock_status !== "out_of_stock";
   const config = await getSiteConfig();
@@ -97,7 +102,7 @@ export default async function ProductLayout({ params, children }: Props) {
     offers: {
       "@type": "Offer",
       url,
-      price: product.price != null ? Number(product.price).toFixed(2) : undefined,
+      price: product.price != null ? schemaPrice(product.price) : undefined,
       priceCurrency: currency,
       availability: inStock
         ? "https://schema.org/InStock"

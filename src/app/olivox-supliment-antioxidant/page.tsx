@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { displayPrice, schemaPrice } from "@/lib/price";
 
 // Pillar page for the brand keyword "olivox". Prices come from the DB so the
 // comparison table and the Offer schema never drift from the catalog.
@@ -131,7 +132,7 @@ export default async function OlivoxPillarPage() {
     publisher: {
       "@type": "Organization",
       name: "olivox.ro",
-      logo: { "@type": "ImageObject", url: "https://olivox.ro/favicon.ico" },
+      logo: { "@type": "ImageObject", url: "https://olivox.ro/logo.png" },
     },
     mainEntityOfPage: URL,
     inLanguage: "ro-RO",
@@ -157,7 +158,7 @@ export default async function OlivoxPillarPage() {
         offers: v.price != null ? {
           "@type": "Offer",
           url: `https://olivox.ro${hrefFor(v)}`,
-          price: Number(v.price).toFixed(2),
+          price: schemaPrice(v.price),
           priceCurrency: v.currency || "RON",
           availability: v.stock_status !== "out_of_stock"
             ? "https://schema.org/InStock"
@@ -343,7 +344,7 @@ export default async function OlivoxPillarPage() {
                     </td>
                     <td>{v.quantity || "—"}</td>
                     <td>
-                      {v.price != null ? `${Math.ceil(Number(v.price))} ${v.currency || "RON"}` : "—"}
+                      {v.price != null ? `${displayPrice(v.price)} ${v.currency || "RON"}` : "—"}
                     </td>
                   </tr>
                 ))}

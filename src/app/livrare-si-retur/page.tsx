@@ -13,6 +13,11 @@ export const metadata: Metadata = {
     description: "Livrare rapida prin curier. Retur in 14 zile conform OUG 34/2014.",
     url: "https://olivox.ro/livrare-si-retur",
     type: "website",
+    siteName: "olivox.ro",
+    locale: "ro_RO",
+    // openGraph declarat aici inlocuieste complet blocul din layout, deci
+    // imaginea implicita trebuie repetata sau pagina ramane fara og:image.
+    images: [{ url: "https://olivox.ro/og-default.jpg", alt: "Livrare si retur — olivox.ro", width: 1200, height: 630 }],
   },
 };
 

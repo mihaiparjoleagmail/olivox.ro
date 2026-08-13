@@ -3,7 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 const URL = "https://olivox.ro/brand/snep";
-const OG_IMAGE = "https://olivox.ro/husapersonalizata.webp";
+const OG_IMAGE = "https://olivox.ro/og-default.jpg";
 
 export const metadata: Metadata = {
   title: "Snep SpA — producatorul italian distribuit in Romania | Olivox",
@@ -32,7 +32,8 @@ export default function BrandSnepPage() {
     url: "https://mysnep.com",
     description:
       "Snep SpA este un producator italian de suplimente alimentare, alimente functionale, uleiuri esentiale si cosmetice naturale.",
-    logo: OG_IMAGE,
+    // Fara `logo`: nodul descrie brandul Snep, iar noi nu avem un logo Snep —
+    // og-default.jpg e marca olivox si ar fi o atribuire gresita.
   };
 
   const breadcrumbJsonLd = {

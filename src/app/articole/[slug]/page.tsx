@@ -45,7 +45,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = truncate(rawTitle, 60);
   const description = truncate(article.meta_description || article.excerpt || article.title, 160);
   const url = `https://olivox.ro/articole/${slug}`;
-  const image = article.image_url || "";
+  // Fara imagine proprie articolul ramanea complet fara og:image (lista goala
+  // suprascrie si default-ul din layout), deci cadea inapoi pe marca olivox.
+  const image = article.image_url || "https://olivox.ro/og-default.jpg";
   return {
     title,
     description,
@@ -54,11 +56,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title, description, url,
       siteName: "olivox.ro", type: "article", locale: "ro_RO",
       publishedTime: article.published_at || undefined,
-      images: image ? [{ url: image, alt: article.title, width: 1200, height: 630 }] : [],
+      images: [{ url: image, alt: article.title, width: 1200, height: 630 }],
     },
     twitter: {
       card: "summary_large_image", title, description,
-      images: image ? [image] : [],
+      images: [image],
     },
   };
 }
@@ -103,7 +105,7 @@ export default async function ArticlePage({ params }: Props) {
       "@type": "Organization",
       name: "olivox.ro",
       url: "https://olivox.ro",
-      logo: { "@type": "ImageObject", url: "https://olivox.ro/favicon.ico" },
+      logo: { "@type": "ImageObject", url: "https://olivox.ro/logo.png" },
     },
   };
 

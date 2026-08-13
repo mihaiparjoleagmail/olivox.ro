@@ -117,6 +117,22 @@ h3, h4 {
   color: var(--color-primary);
   text-decoration: none;
   letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+/* Marca (masline + frunza) langa logotip. alt="" — textul de langa ea spune deja tot. */
+.site-header__mark {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.site-header__logo-text {
+  display: block;
+  line-height: 1.15;
 }
 
 .site-header__logo span {
@@ -1622,6 +1638,16 @@ h3, h4 {
   font-weight: 800;
   color: var(--color-primary);
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-logo__mark {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 
 .footer-logo span {
@@ -3982,4 +4008,38 @@ h2.eyebrow { margin: 0 0 14px; }
   font-weight: 600;
   letter-spacing: 0.04em;
   margin: 0;
+}
+
+/* =======================================================================
+   LATIME DESKTOP — tot site-ul ocupa 80% din latimea ecranului
+   Regula unica: .page-wrapper da rama (header, continut, footer sunt in el),
+   iar containerele interioare care erau ingustate la 720/900/1200px sunt
+   lasate sa umple rama. Pe mobil nu se schimba nimic (< 768px).
+   ======================================================================= */
+@media (min-width: 768px) {
+  .page-wrapper {
+    max-width: 80%;
+  }
+
+  /* Containere de continut care isi impuneau propria latime */
+  .content-section,
+  .legal-page,
+  .static-page,
+  .prose,
+  .cat-seo,
+  .guide-faq,
+  .guide-related,
+  .guide-cta,
+  .article-hero__meta,
+  .article-hero__plain,
+  .contact-page,
+  .hp-grid {
+    max-width: 100%;
+  }
+
+  /* Bare fixate pe viewport, in afara .page-wrapper */
+  .announcement-bar__inner,
+  .consent-banner__inner {
+    max-width: 80%;
+  }
 }

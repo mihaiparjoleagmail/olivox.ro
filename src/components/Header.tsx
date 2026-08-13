@@ -59,8 +59,19 @@ export default function Header() {
       <header className="site-header">
         <div className="site-header__inner">
           <a href="/" className="site-header__logo" aria-label="olivox.ro — pagina principala">
-            <span dangerouslySetInnerHTML={{ __html: config.logoHtml }} />
-            <span className="site-header__tagline">Produse naturiste</span>
+            <img
+              className="site-header__mark"
+              src="/logo-64.webp"
+              srcSet="/logo-64.webp 1x, /logo.webp 2x"
+              alt=""
+              width={36}
+              height={36}
+              decoding="async"
+            />
+            <span className="site-header__logo-text">
+              <span dangerouslySetInnerHTML={{ __html: config.logoHtml }} />
+              <span className="site-header__tagline">Produse naturiste</span>
+            </span>
           </a>
           <div className={`site-search ${searchOpen ? "site-search--open" : ""}`}>
             <button className="site-search__icon" onClick={toggleSearch} type="button" aria-label="Cauta">

@@ -12,6 +12,28 @@ function checkAuth(request: Request): boolean {
   return user === ADMIN_USER && pass === ADMIN_PASS;
 }
 
+/**
+ * Cauta un produs dupa id sau slug. Folosit in detaliile comenzii, ca sa se
+ * poata deschide produsul pe site si originalul de pe mysnep (source_url).
+ */
+export async function GET(request: Request) {
+  if (!checkAuth(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  const slug = searchParams.get("slug");
+  if (!id && !slug) return NextResponse.json({ error: "Missing id or slug" }, { status: 400 });
+
+  const query = supabase.from("products").select("id, name, slug, sku, source_url, category_slugs").limit(1);
+  const { data, error } = id
+    ? await query.eq("id", Number(id)).maybeSingle()
+    : await query.eq("slug", slug!).maybeSingle();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json(data);
+}
+
 export async function POST(request: Request) {
   if (!checkAuth(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await request.json();

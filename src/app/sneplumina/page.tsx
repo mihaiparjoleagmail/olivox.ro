@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { displayPrice, schemaPrice } from "@/lib/price";
 
 // Pillar page for "sneplumina". The term currently splits across the shampoo,
 // the box and the argan oil product pages — this page is the hub.
@@ -141,7 +142,7 @@ export default async function SnepluminaPillarPage() {
     publisher: {
       "@type": "Organization",
       name: "olivox.ro",
-      logo: { "@type": "ImageObject", url: "https://olivox.ro/favicon.ico" },
+      logo: { "@type": "ImageObject", url: "https://olivox.ro/logo.png" },
     },
     mainEntityOfPage: URL,
     inLanguage: "ro-RO",
@@ -167,7 +168,7 @@ export default async function SnepluminaPillarPage() {
         offers: v.price != null ? {
           "@type": "Offer",
           url: `https://olivox.ro${hrefFor(v)}`,
-          price: Number(v.price).toFixed(2),
+          price: schemaPrice(v.price),
           priceCurrency: v.currency || "RON",
           availability: v.stock_status !== "out_of_stock"
             ? "https://schema.org/InStock"
@@ -261,7 +262,7 @@ export default async function SnepluminaPillarPage() {
                       <td>{lbl?.rol || "—"}</td>
                       <td>{v.quantity || "—"}</td>
                       <td>
-                        {v.price != null ? `${Math.ceil(Number(v.price))} ${v.currency || "RON"}` : "—"}
+                        {v.price != null ? `${displayPrice(v.price)} ${v.currency || "RON"}` : "—"}
                       </td>
                     </tr>
                   );

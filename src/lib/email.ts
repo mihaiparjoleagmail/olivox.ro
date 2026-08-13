@@ -11,6 +11,9 @@ interface OrderEmailData {
   customer_phone: string;
   customer_email?: string;
   address: string;
+  /** dd.mm.yyyy */
+  birth_date?: string;
+  postal_code?: string;
   observations?: string;
   /** Total de plata: produse + transport. */
   order_value?: number;
@@ -57,7 +60,9 @@ export async function sendOrderEmail(data: OrderEmailData) {
         <tr><td>Nume</td><td>${data.customer_name}</td></tr>
         <tr><td>Telefon</td><td>${data.customer_phone}</td></tr>
         ${data.customer_email ? `<tr><td>Email</td><td>${data.customer_email}</td></tr>` : ""}
+        ${data.birth_date ? `<tr><td>Data nasterii</td><td>${data.birth_date}</td></tr>` : ""}
         <tr><td>Adresa</td><td>${data.address}</td></tr>
+        ${data.postal_code ? `<tr><td>Cod postal</td><td>${data.postal_code}</td></tr>` : ""}
         ${data.observations ? `<tr><td>Observatii</td><td>${data.observations}</td></tr>` : ""}
       </table>
     </div>
@@ -116,7 +121,7 @@ export async function sendClientEmail(data: OrderEmailData) {
         <tr><td>Cantitate</td><td>${data.quantity || 1}</td></tr>
         ${data.shipping_cost ? `<tr><td>${config.shippingLabel}</td><td>${data.shipping_cost} RON</td></tr>` : ""}
         ${data.order_value ? `<tr><td>Total de plata</td><td><strong>${data.order_value} RON</strong></td></tr>` : ""}
-        <tr><td>Livrare la</td><td>${data.address}</td></tr>
+        <tr><td>Livrare la</td><td>${data.address}${data.postal_code ? `, cod postal ${data.postal_code}` : ""}</td></tr>
       </table>
       <div style="border:1px solid #e5e7eb;border-left:4px solid #1a6b3a;border-radius:8px;padding:16px 18px;margin-bottom:20px;background:#f9fafb">
         <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1a6b3a">Plata se face exclusiv online, prin transfer bancar</p>

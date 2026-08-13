@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getProduct, getRelatedProducts, stripHtml } from "./product-data";
 import { getSiteConfig } from "@/lib/site-config";
 import OrderForm from "./OrderForm";
+import { displayPrice } from "@/lib/price";
 
 interface Props {
   params: Promise<{ slug: string; product: string }>;
@@ -128,7 +129,7 @@ export default async function ProductPage({ params }: Props) {
 
           <div className="pd-hero__price-row">
             <div className="pd-hero__price">
-              {Math.ceil(price)} <span className="pd-hero__currency">{currency}</span>
+              {displayPrice(price)} <span className="pd-hero__currency">{currency}</span>
             </div>
           </div>
         </div>
@@ -204,7 +205,7 @@ export default async function ProductPage({ params }: Props) {
                 <a href={`/produse/${categorySlug}/${r.slug}`} className="pd-related__link">
                   <span className="pd-related__name">{r.name}</span>
                   {r.price != null && (
-                    <span className="pd-related__price">{Math.ceil(Number(r.price))} {r.currency || "RON"}</span>
+                    <span className="pd-related__price">{displayPrice(r.price)} {r.currency || "RON"}</span>
                   )}
                 </a>
               </li>

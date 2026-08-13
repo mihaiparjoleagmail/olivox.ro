@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import type { Metadata } from "next";
+import { displayPrice } from "@/lib/price";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -167,7 +168,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
               <div className="product-card__info">
                 <h3 className="product-card__name">{prod.name}</h3>
                 <div className="product-card__bottom">
-                  <span className="product-card__price">{prod.price} RON</span>
+                  <span className="product-card__price">{displayPrice(prod.price)} RON</span>
                   <div className="product-card__stars">
                     <span className="product-card__stars-icons">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
                     <span className="product-card__stars-count">({((prod.id * 7 + 13) % 277) + 4})</span>

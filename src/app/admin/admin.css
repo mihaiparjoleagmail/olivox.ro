@@ -2455,3 +2455,174 @@
     height: 40px;
   }
 }
+
+/* =======================================================================
+   LATIME DESKTOP — adminul ocupa 80% din latimea ecranului
+   (acelasi tratament ca pe front; sub 768px ramane cum era)
+   ======================================================================= */
+@media (min-width: 768px) {
+  .admin-wrap {
+    max-width: 80%;
+  }
+  /* .ot-page e deja in interiorul .admin-wrap — umple rama, nu se mai ingusteaza */
+  .ot-page {
+    max-width: 100%;
+  }
+}
+
+/* ===== REACTUALIZARE PRETURI ===== */
+.price-sync { max-width: 760px; }
+.price-sync__lead {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+.price-sync__error {
+  background: rgba(220, 38, 38, 0.08);
+  border: 1.5px solid #dc2626;
+  color: #dc2626;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+.price-sync__bar {
+  height: 10px;
+  border-radius: 6px;
+  background: var(--color-border);
+  overflow: hidden;
+  margin: 8px 0 10px;
+}
+.price-sync__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: 6px;
+  transition: width 0.25s ease;
+}
+/* Pasul de scriere nu are procent, doar o banda care se plimba. */
+.price-sync__fill--indet {
+  width: 40%;
+  animation: priceSyncSlide 1.1s ease-in-out infinite;
+}
+@keyframes priceSyncSlide {
+  0%   { margin-left: -40%; }
+  100% { margin-left: 100%; }
+}
+.price-sync__status {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.price-sync__summary {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+.price-sync__summary-err { color: #dc2626; }
+.price-sync__list {
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.price-sync__row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  font-size: 0.78rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.price-sync__row:last-child { border-bottom: 0; }
+.price-sync__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.price-sync__old { color: var(--color-text-muted); text-decoration: line-through; }
+.price-sync__arrow { color: var(--color-text-muted); }
+.price-sync__new { font-weight: 700; }
+.price-sync__new.is-up { color: #b45309; }
+.price-sync__new.is-down { color: #10b981; }
+.price-sync__delta { text-align: right; font-size: 0.72rem; color: var(--color-text-muted); }
+.price-sync__errors { margin-top: 12px; font-size: 0.76rem; }
+.price-sync__errors summary { cursor: pointer; color: #dc2626; }
+.price-sync__errrow { padding: 3px 0 3px 12px; color: var(--color-text-muted); }
+.price-sync__actions { display: flex; gap: 8px; margin-top: 14px; }
+
+@media (max-width: 640px) {
+  .price-sync__row { grid-template-columns: 1fr auto auto; }
+  .price-sync__arrow, .price-sync__delta { display: none; }
+}
+
+/* Sincronizare catalog — taburi + selectie */
+.price-sync__tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.price-sync__tab {
+  padding: 6px 12px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  font-family: var(--font);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+.price-sync__tab.is-active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-surface);
+}
+.price-sync__all {
+  background: none;
+  border: 0;
+  color: var(--color-primary);
+  font-size: 0.74rem;
+  font-family: var(--font);
+  cursor: pointer;
+  padding: 0 0 6px;
+  text-decoration: underline;
+}
+.price-sync__row { cursor: pointer; }
+.price-sync__row input[type="checkbox"] { margin: 0; cursor: pointer; }
+.price-sync__cat { font-size: 0.7rem; color: var(--color-text-muted); white-space: nowrap; }
+.price-sync__name a { color: var(--color-primary); }
+.price-sync__mode {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.76rem;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+.price-sync__mode label { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+.price-sync__picked {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin-left: auto;
+  align-self: center;
+}
+.price-sync__actions { flex-wrap: wrap; align-items: center; }
+
+/* Randurile au acum si checkbox in fata */
+.price-sync__row { grid-template-columns: auto 1fr auto auto auto; }
+@media (max-width: 640px) {
+  .price-sync__row { grid-template-columns: auto 1fr auto; }
+}

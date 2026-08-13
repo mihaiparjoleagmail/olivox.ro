@@ -43,12 +43,24 @@ export async function PATCH(request: Request) {
     }
     // Full update
     const update: Record<string, unknown> = {};
-    for (const key of ["status", "customer_name", "customer_phone", "customer_email", "address", "product_name", "product_slug", "quantity", "observations", "custom_field_values", "order_value", "shipping_cost", "locker_id", "shipping_method", "awb_number", "awb_status", "fan_awb", "fan_status", "sd_awb", "sd_status", "eb_awb", "eb_status", "ramburs", "fgo_serie", "fgo_numar", "fgo_link"]) {
+    for (const key of ["status", "customer_name", "customer_phone", "customer_email", "birth_date", "postal_code", "address", "product_name", "product_slug", "quantity", "observations", "custom_field_values", "order_value", "shipping_cost", "locker_id", "shipping_method", "awb_number", "awb_status", "fan_awb", "fan_status", "sd_awb", "sd_status", "eb_awb", "eb_status", "ramburs", "fgo_serie", "fgo_numar", "fgo_link"]) {
       if (fields[key] !== undefined) update[key] = fields[key];
     }
-    const { data, error: err } = await supabase.from("orders").update(update).eq("id", id).select().single();
-    if (err) throw err;
-    return NextResponse.json(data);
+    let res = await supabase.from("orders").update(update).eq("id", id).select().single();
+
+    // Migrarea scripts/sql/add-birthdate-postalcode.sql poate sa nu fi rulat
+    // inca: salvam restul campurilor in loc sa pice tot formularul de editare.
+    if (res.error && (res.error.code === "PGRST204" || res.error.code === "42703")) {
+      const optional = ["birth_date", "postal_code", "shipping_cost"].filter((k) => k in update);
+      if (optional.length > 0) {
+        console.error(`orders: coloane lipsa (${optional.join(", ")}) — ruleaza migrarile din scripts/sql/`);
+        for (const key of optional) delete update[key];
+        res = await supabase.from("orders").update(update).eq("id", id).select().single();
+      }
+    }
+
+    if (res.error) throw res.error;
+    return NextResponse.json(res.data);
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to update order", details: String(error) },

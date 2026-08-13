@@ -13,6 +13,11 @@ export const metadata: Metadata = {
       "Misiunea, valorile si povestea Olivox: de ce am ales sa aducem in Romania produsele naturiste Snep.",
     url: "https://olivox.ro/despre",
     type: "website",
+    siteName: "olivox.ro",
+    locale: "ro_RO",
+    // openGraph declarat aici inlocuieste complet blocul din layout, deci
+    // imaginea implicita trebuie repetata sau pagina ramane fara og:image.
+    images: [{ url: "https://olivox.ro/og-default.jpg", alt: "Despre Olivox — distribuitor oficial Snep", width: 1200, height: 630 }],
   },
 };
 

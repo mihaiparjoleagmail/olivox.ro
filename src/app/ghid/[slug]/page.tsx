@@ -570,7 +570,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: "olivox.ro",
       type: "article",
       locale: "ro_RO",
-      images: [{ url: "https://olivox.ro/husapersonalizata.webp", alt: g.title }],
+      images: [{ url: "https://olivox.ro/og-default.jpg", alt: g.title }],
     },
   };
 }
@@ -585,12 +585,12 @@ export default async function GuidePage({ params }: Props) {
     "@type": "Article",
     headline: g.title,
     description: g.metaDescription,
-    image: "https://olivox.ro/husapersonalizata.webp",
+    image: "https://olivox.ro/og-default.jpg",
     author: { "@type": "Organization", name: "Olivox" },
     publisher: {
       "@type": "Organization",
       name: "olivox.ro",
-      logo: { "@type": "ImageObject", url: "https://olivox.ro/favicon.ico" },
+      logo: { "@type": "ImageObject", url: "https://olivox.ro/logo.png" },
     },
     mainEntityOfPage: `https://olivox.ro/ghid/${g.slug}`,
     inLanguage: "ro-RO",

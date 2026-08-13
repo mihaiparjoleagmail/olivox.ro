@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 const BASE = "https://olivox.ro";
 // Costul de transport vine din site_config (Admin -> Setari -> Preturi).
 import { getSiteConfig, resolveShippingCost } from "@/lib/site-config";
+import { displayPrice } from "./price";
 const BRAND = "Snep";
 const GOOGLE_CAT_SUPPLEMENTS = "2984"; // Vitamins & Supplements
 
@@ -111,8 +112,10 @@ function shippingBlock(fee: number): string {
 }
 
 function pricesBlock(p: FeedProduct): string {
-  const price = p.price ? Number(p.price) : 0;
-  const oldPrice = p.old_price ? Number(p.old_price) : 0;
+  // Aceleasi cifre ca pe pagina de produs — Google respinge feed-ul cand pretul
+  // din feed nu e cel afisat pe site.
+  const price = displayPrice(p.price);
+  const oldPrice = displayPrice(p.old_price);
   // Google: g:price = listing price, g:sale_price = current sale if lower
   if (oldPrice > 0 && oldPrice > price) {
     return `<g:price>${oldPrice.toFixed(2)} RON</g:price>
@@ -217,7 +220,7 @@ export async function buildFeed(platform: FeedPlatform): Promise<{ xml: string; 
       skipped++;
       continue;
     }
-    const shippingFee = resolveShippingCost(Number(p.price) || 0, config);
+    const shippingFee = resolveShippingCost(displayPrice(p.price), config);
     if (platform === "google") parts.push(googleItem(p, shippingFee));
     else if (platform === "facebook") parts.push(facebookItem(p, shippingFee));
     else parts.push(tiktokItem(p));

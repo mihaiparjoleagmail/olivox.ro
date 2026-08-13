@@ -59,7 +59,7 @@ const organizationJsonLd = {
   "@type": "Organization",
   name: "olivox.ro",
   url: "https://olivox.ro",
-  logo: "https://olivox.ro/favicon.ico",
+  logo: "https://olivox.ro/logo.png",
   description: DEFAULT_CONFIG.metaDescription,
   address: {
     "@type": "PostalAddress",

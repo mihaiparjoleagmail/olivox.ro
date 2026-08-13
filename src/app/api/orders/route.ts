@@ -2,6 +2,19 @@ import { NextResponse } from "next/server";
 import { sendOrderEmail, sendClientEmail } from "@/lib/email";
 import { getSiteConfig, resolveShippingCost } from "@/lib/site-config";
 
+/** Acceptam doar dd.mm.yyyy si verificam ca e o data reala (nu 31.02.1990). */
+function isValidBirthDate(value: string): boolean {
+  const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+  if (!m) return false;
+  const day = Number(m[1]);
+  const month = Number(m[2]);
+  const year = Number(m[3]);
+  const d = new Date(year, month - 1, day);
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return false;
+  const now = new Date();
+  return d <= now && year >= 1900;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -10,6 +23,22 @@ export async function POST(request: Request) {
     if (!customer_name || !customer_phone || !address) {
       return NextResponse.json(
         { error: "Nume, telefon si adresa sunt obligatorii." },
+        { status: 400 }
+      );
+    }
+
+    const birthDate = String(body.birth_date || "").trim();
+    if (!isValidBirthDate(birthDate)) {
+      return NextResponse.json(
+        { error: "Data nasterii este obligatorie si trebuie sa fie in formatul zz.ll.aaaa." },
+        { status: 400 }
+      );
+    }
+
+    const postalCode = String(body.postal_code || "").trim();
+    if (!/^\d{6}$/.test(postalCode)) {
+      return NextResponse.json(
+        { error: "Codul postal este obligatoriu si trebuie sa aiba 6 cifre." },
         { status: 400 }
       );
     }
@@ -38,6 +67,8 @@ export async function POST(request: Request) {
       locker_id: body.locker_id || null,
       order_source: body.order_source || "",
       custom_field_values: body.custom_field_values || {},
+      birth_date: birthDate,
+      postal_code: postalCode,
     });
 
     const emailErrors: string[] = [];

@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   const { data } = await supabase
     .from("settings")
     .select("key, value")
-    .in("key", ["fancourier", "sameday", "fgo", "pixels", "site_config", "whatsapp", "addon_groups", "homepage_active"]);
+    .in("key", ["fancourier", "sameday", "fgo", "pixels", "site_config", "whatsapp", "addon_groups", "homepage_active", "mysnep"]);
 
   const settings: Record<string, unknown> = {};
   data?.forEach((row) => {

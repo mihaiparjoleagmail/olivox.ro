@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getSiteConfig } from "@/lib/site-config";
+import { displayPrice } from "@/lib/price";
 
 const OPTIMIZED_IMG_HOSTS = ["media.ghidulfunerar.ro", "huse.gravpoint.ro"];
 function canOptimize(url: string | null | undefined): boolean {
@@ -125,7 +126,7 @@ export default async function HomePage() {
                   <div className="product-card__info">
                     <h3 className="product-card__name">{prod.name}</h3>
                     <div className="product-card__bottom">
-                      <span className="product-card__price">{prod.price} RON</span>
+                      <span className="product-card__price">{displayPrice(prod.price)} RON</span>
                     </div>
                   </div>
                 </a>

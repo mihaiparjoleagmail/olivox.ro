@@ -28,6 +28,10 @@ const KNOWN_PREFIXES = [
   "/intrebari-frecvente",
   "/feed",
   "/favicon",
+  // Next.js serveste app/icon.png si app/apple-icon.png pe rute fara extensie,
+  // deci nu sunt prinse de STATIC_EXT_REGEX si ar fi redirectionate la /categorii.
+  "/icon",
+  "/apple-icon",
   "/robots.txt",
   "/sitemap.xml",
   "/sitemap-images.xml",

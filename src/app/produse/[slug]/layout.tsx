@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { schemaPrice } from "@/lib/price";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -53,7 +54,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     category.meta_description || plainDesc || `${category.name} — produse premium disponibile pe olivox.ro.`,
     160
   );
-  const image = category.image_url || "";
+  // Idem: poza categoriei are prioritate, marca olivox e fallback.
+  const image = category.image_url || "https://olivox.ro/og-default.jpg";
   const url = `https://olivox.ro/produse/${slug}`;
 
   return {
@@ -63,11 +65,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title, description, url,
       siteName: "olivox.ro", type: "website", locale: "ro_RO",
-      images: image ? [{ url: image, alt: category.name, width: 1200, height: 1200 }] : [],
+      images: [{ url: image, alt: category.name, width: 1200, height: 1200 }],
     },
     twitter: {
       card: "summary_large_image", title, description,
-      images: image ? [image] : [],
+      images: [image],
     },
   };
 }
@@ -122,7 +124,7 @@ export default async function CategoryLayout({ params, children }: Props) {
           image: p.r2_image_url || p.image_url || undefined,
           offers: p.price != null ? {
             "@type": "Offer",
-            price: Number(p.price).toFixed(2),
+            price: schemaPrice(p.price),
             priceCurrency: p.currency || "RON",
             availability: p.stock_status !== "out_of_stock"
               ? "https://schema.org/InStock"

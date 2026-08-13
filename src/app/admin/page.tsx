@@ -27,6 +27,9 @@ interface Order {
   customer_name: string;
   customer_phone: string;
   customer_email: string;
+  /** dd.mm.yyyy */
+  birth_date?: string;
+  postal_code?: string;
   observations: string;
   status: string;
   awb_number?: string;
@@ -48,6 +51,25 @@ interface Order {
   shipping_cost?: number;
   locker_id?: number | null;
   created_at: string;
+}
+
+/** Ce returneaza GET /api/admin/products?id=|slug= pentru detaliile comenzii. */
+interface OrderProductInfo {
+  id: number;
+  name: string;
+  slug: string;
+  sku?: string | null;
+  /** URL-ul original de pe mysnep, de unde a fost importat produsul. */
+  source_url?: string | null;
+  category_slugs?: string[] | null;
+}
+
+/** Pune punctele singur pe masura ce se tasteaza: 01011990 -> 01.01.1990 */
+function maskBirthDate(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}.${digits.slice(2, 4)}.${digits.slice(4)}`;
 }
 
 interface Category {
@@ -836,6 +858,7 @@ function ProductsPanel({ auth }: { auth: string }) {
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [showAdd, setShowAdd] = useState(false);
+  const [showPriceSync, setShowPriceSync] = useState(false);
   const [newName, setNewName] = useState("");
   const [newSlug, setNewSlug] = useState("");
   const config = useConfig();
@@ -918,8 +941,15 @@ function ProductsPanel({ auth }: { auth: string }) {
         </select>
         <input className="admin-search" placeholder="Cauta produs..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
         <span className="admin-count">{total}</span>
+        <button className="admin-inline-btn" onClick={() => setShowPriceSync(true)} title="Reactualizeaza preturile din mysnep">
+          ⟳ Preturi
+        </button>
         <a href="/admin/produse/nou" className="admin-add-btn" style={{ textDecoration: "none" }}><span className="admin-add-btn__plus">+</span><span className="admin-add-btn__text"> Adauga</span></a>
       </div>
+
+      {showPriceSync && (
+        <PriceSyncPanel auth={auth} onClose={() => setShowPriceSync(false)} onApplied={fetchProds} />
+      )}
 
       {showAdd && (
         <div className="admin-add-form">
@@ -1048,7 +1078,8 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
 
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [settingsTab, setSettingsTab] = useState<"site" | "fancourier" | "sameday" | "fgo" | "pixels" | "whatsapp" | "addons" | "feed">("site");
+  const [settingsTab, setSettingsTab] = useState<"site" | "fancourier" | "sameday" | "fgo" | "pixels" | "whatsapp" | "addons" | "feed" | "mysnep">("site");
+  const [mysnepCookies, setMysnepCookies] = useState("");
 
   // Feed stats
   const [feedStats, setFeedStats] = useState<Record<string, { items: number; skipped: number; generated_at: string } | null>>({ google: null, facebook: null, tiktok: null });
@@ -1181,6 +1212,7 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
         if (data.addon_groups && Array.isArray(data.addon_groups)) {
           setAddonGroups(data.addon_groups);
         }
+        if (data.mysnep?.cookies) setMysnepCookies(data.mysnep.cookies);
         if (data.fgo) {
           setFgoCui(data.fgo.cui || "");
           setFgoApiKey(data.fgo.api_key || "");
@@ -1227,6 +1259,7 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
         fgo: { cui: fgoCui, api_key: fgoApiKey, serie: fgoSerie, platform_url: fgoPlatformUrl, cota_tva: Number(fgoCotaTva), test_mode: fgoTestMode },
         whatsapp: { template: waTemplate, templates: waTemplates, general_template: waGeneralTemplate },
         addon_groups: addonGroups,
+        mysnep: { cookies: mysnepCookies.trim() },
       }),
     });
     setSaved(true);
@@ -1246,6 +1279,7 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
         <button className={`admin-settings__tab ${settingsTab === "whatsapp" ? "admin-settings__tab--active" : ""}`} onClick={() => setSettingsTab("whatsapp")}>WhatsApp</button>
         <button className={`admin-settings__tab ${settingsTab === "addons" ? "admin-settings__tab--active" : ""}`} onClick={() => setSettingsTab("addons")}>Campuri Addons</button>
         <button className={`admin-settings__tab ${settingsTab === "feed" ? "admin-settings__tab--active" : ""}`} onClick={() => setSettingsTab("feed")}>Feed Produse</button>
+        <button className={`admin-settings__tab ${settingsTab === "mysnep" ? "admin-settings__tab--active" : ""}`} onClick={() => setSettingsTab("mysnep")}>mysnep</button>
       </div>
 
       {settingsTab === "site" && (
@@ -1319,7 +1353,7 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
             <h3>Date firma</h3>
             <div className="admin-settings__grid">
               <div className="admin-settings__field"><label>Nume firma</label><input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} /></div>
-              <div className="admin-settings__field"><label>CIF</label><input type="text" value={companyCIF} onChange={(e) => setCompanyCIF(e.target.value)} /></div>
+              <div className="admin-settings__field"><label>Cod distribuitor</label><input type="text" value={companyCIF} onChange={(e) => setCompanyCIF(e.target.value)} placeholder="Cod: 400178409" /></div>
               <div className="admin-settings__field"><label>Adresa</label><input type="text" value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} /></div>
               <div className="admin-settings__field"><label>Judet</label><input type="text" value={companyCounty} onChange={(e) => setCompanyCounty(e.target.value)} /></div>
               <div className="admin-settings__field"><label>Localitate</label><input type="text" value={companyLocality} onChange={(e) => setCompanyLocality(e.target.value)} /></div>
@@ -1703,6 +1737,33 @@ Confirmați adresa de livrare și vă procesăm comanda rapid.`;
             setAddonGroups([...addonGroups, { id: newId, name: "", fields: [] }]);
             setExpandedGroup(newId);
           }}>+ Adauga grup addon</button>
+        </div>
+      )}
+
+      {settingsTab === "mysnep" && (
+        <div className="admin-settings__section">
+          <h3>Sesiune mysnep (reactualizare preturi)</h3>
+          <p className="admin-settings__desc">
+            Preturile de pe mysnep.com se vad doar cu contul de distribuitor logat, deci butonul
+            &bdquo;⟳ Preturi&rdquo; din pagina Produse are nevoie de cookie-ul tau de sesiune.
+            Cookie-ul expira din cand in cand — cand reactualizarea zice &bdquo;sesiune expirata&rdquo;,
+            revino aici si pune unul nou.
+          </p>
+          <ol className="admin-settings__desc" style={{ paddingLeft: 18, lineHeight: 1.7 }}>
+            <li>Intra pe mysnep.com si logheaza-te cu contul de distribuitor.</li>
+            <li>Deschide DevTools (F12) &rarr; Application &rarr; Cookies &rarr; https://www.mysnep.com</li>
+            <li>Copiaza valoarea cookie-ului <code>PHPSESSID</code>.</li>
+            <li>Lipeste mai jos sub forma <code>PHPSESSID=valoarea_copiata</code> si apasa Salveaza.</li>
+          </ol>
+          <div className="admin-settings__field">
+            <label>Cookie sesiune</label>
+            <input
+              type="text"
+              placeholder="PHPSESSID=..."
+              value={mysnepCookies}
+              onChange={(e) => setMysnepCookies(e.target.value)}
+            />
+          </div>
         </div>
       )}
 
@@ -2739,11 +2800,16 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
     customer_name: order.customer_name,
     customer_phone: order.customer_phone,
     customer_email: order.customer_email || "",
+    birth_date: order.birth_date || "",
+    postal_code: order.postal_code || "",
     observations: order.observations || "",
     custom_field_values: order.custom_field_values || {},
     order_value: order.order_value || 0,
     locker_id: order.locker_id || null,
   });
+  // Produsul comandat: ne trebuie sku-ul si source_url-ul (originalul mysnep),
+  // care nu se salveaza pe comanda.
+  const [productInfo, setProductInfo] = useState<OrderProductInfo | null>(null);
   const [judetName, setJudetName] = useState("");
   const [localitateVal, setLocalitateVal] = useState("");
   const [stradaVal, setStradaVal] = useState("");
@@ -2756,6 +2822,21 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
   const [lockerSearch, setLockerSearch] = useState("");
   const [selectedLockerName, setSelectedLockerName] = useState("");
   const isEasybox = order.shipping_method === "easybox";
+
+  useEffect(() => {
+    const param = order.product_id
+      ? `id=${order.product_id}`
+      : order.product_slug
+      ? `slug=${encodeURIComponent(order.product_slug)}`
+      : "";
+    if (!param) { setProductInfo(null); return; }
+    let cancelled = false;
+    fetch(`/api/admin/products?${param}`, { headers: { Authorization: auth } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (!cancelled && data && !data.error) setProductInfo(data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [order.product_id, order.product_slug, auth]);
 
   // Parse address
   useEffect(() => {
@@ -2851,14 +2932,51 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
   };
 
   const productName = order.product_name || "";
+  // Link catre pagina de produs de pe site. Categoria vine din produs; daca nu
+  // se poate afla, nu punem link (URL-ul /produse/<categorie>/<slug> ar fi gresit).
+  const productSlug = productInfo?.slug || order.product_slug || "";
+  const productCategory = productInfo?.category_slugs?.[0] || "";
+  const productUrl = productSlug && productCategory ? `/produse/${productCategory}/${productSlug}` : "";
+  const productSku = productInfo?.sku || "";
+  const productSourceUrl = productInfo?.source_url || "";
 
   if (!editing) {
     return (
       <>
-        {/* Product name above details */}
+        {/* Product name above details — deschide produsul de pe site intr-un tab nou */}
         {productName && (
-          <div style={{ fontSize: "1rem", fontWeight: 700, color: "var(--color-primary)", marginBottom: 8 }}>
-            {productName}
+          <div style={{ marginBottom: 8 }}>
+            {productUrl ? (
+              <a
+                href={productUrl}
+                target="_blank"
+                rel="noopener"
+                style={{ fontSize: "1rem", fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}
+                title="Deschide produsul pe site"
+              >
+                {productName}
+              </a>
+            ) : (
+              <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--color-primary)" }}>{productName}</span>
+            )}
+            {productSku && (
+              <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: 2 }}>
+                Cod:{" "}
+                {productSourceUrl ? (
+                  <a
+                    href={productSourceUrl}
+                    target="_blank"
+                    rel="noopener"
+                    style={{ color: "var(--color-accent)", fontWeight: 700 }}
+                    title="Deschide produsul original pe mysnep"
+                  >
+                    {productSku}
+                  </a>
+                ) : (
+                  <strong>{productSku}</strong>
+                )}
+              </div>
+            )}
           </div>
         )}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -2869,9 +2987,11 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
           <tr><td>Nume</td><td>{order.customer_name}</td></tr>
           <tr><td>Telefon</td><td><a href={`tel:${order.customer_phone}`}>{order.customer_phone}</a></td></tr>
           {order.customer_email && <tr><td>Email</td><td>{order.customer_email}</td></tr>}
+          {order.birth_date && <tr><td>Data nasterii</td><td>{order.birth_date}</td></tr>}
           {judetName && <tr><td>Județ</td><td>{judetName}</td></tr>}
           {localitateVal && <tr><td>Localitate</td><td>{localitateVal}</td></tr>}
           <tr><td>Adresa</td><td>{order.address}</td></tr>
+          {order.postal_code && <tr><td>Cod postal</td><td>{order.postal_code}</td></tr>}
           <tr><td>Valoare</td><td><strong style={{ color: "var(--color-accent)" }}>{order.order_value || 0} RON</strong>{order.shipping_cost ? <span style={{ color: "var(--color-text-muted)", fontSize: "0.75rem" }}> (din care {order.shipping_cost} RON transport)</span> : null}</td></tr>
           {order.observations && <tr><td>Obs</td><td>{order.observations}</td></tr>}
           {order.custom_field_values && Object.entries(order.custom_field_values).map(([key, cf]) => (
@@ -2909,6 +3029,10 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
           <label>Email</label>
           <input value={f.customer_email} onChange={(e) => setF({ ...f, customer_email: e.target.value })} />
         </div>
+        <div className="order-edit-row">
+          <label>Data nasterii</label>
+          <input placeholder="zz.ll.aaaa" maxLength={10} value={f.birth_date} onChange={(e) => setF({ ...f, birth_date: maskBirthDate(e.target.value) })} />
+        </div>
         {/* Judet/Localitate/Strada - shown first so locker filtering uses selected judet */}
         <div className="order-edit-row">
           <label>Judet</label>
@@ -2927,6 +3051,10 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
         <div className="order-edit-row">
           <label>Strada</label>
           <input value={stradaVal} onChange={(e) => setStradaVal(e.target.value)} />
+        </div>
+        <div className="order-edit-row">
+          <label>Cod postal</label>
+          <input inputMode="numeric" maxLength={6} value={f.postal_code} onChange={(e) => setF({ ...f, postal_code: e.target.value.replace(/\D/g, "").slice(0, 6) })} />
         </div>
         {/* Easybox locker picker - filters by address judet */}
         <div style={{ border: "1.5px solid #0066cc", borderRadius: "var(--radius-sm)", padding: 10, marginBottom: 4, background: "rgba(0,102,204,0.03)" }}>
@@ -3003,6 +3131,280 @@ function OrderDetails({ order, auth, onUpdate }: { order: Order; auth: string; o
         )}
       </div>
     </>
+  );
+}
+
+// ===== SINCRONIZARE CATALOG CU MYSNEP =====
+interface PriceChange { id: number; name: string; sku: string; oldDisplay: number; newDisplay: number; newPrice: number }
+interface NewProduct { sku: string; name: string; url: string; price: number | null; slug: string; category: string; available: boolean }
+interface MissingProduct { id: number; name: string; sku: string | null; price: number | null; alreadyOut: boolean; renamedTo?: string | null }
+
+/**
+ * Doi pasi: intai se citeste catalogul furnizorului si se arata diferentele
+ * (preturi schimbate / produse noi la ei / produse care nu mai exista la ei),
+ * apoi se scrie doar ce a bifat utilizatorul.
+ */
+function PriceSyncPanel({ auth, onClose, onApplied }: { auth: string; onClose: () => void; onApplied: () => void }) {
+  const [phase, setPhase] = useState<"idle" | "scanning" | "review" | "applying" | "applied">("idle");
+  const [pages, setPages] = useState(0);
+  const [label, setLabel] = useState("");
+  const [tab, setTab] = useState<"prices" | "new" | "missing">("prices");
+  const [priceChanges, setPriceChanges] = useState<PriceChange[]>([]);
+  const [newProducts, setNewProducts] = useState<NewProduct[]>([]);
+  const [missingProducts, setMissingProducts] = useState<MissingProduct[]>([]);
+  const [stats, setStats] = useState({ supplierTotal: 0, ourTotal: 0, unchanged: 0 });
+  const [pickPrices, setPickPrices] = useState<Set<number>>(new Set());
+  const [pickNew, setPickNew] = useState<Set<string>>(new Set());
+  const [pickMissing, setPickMissing] = useState<Set<number>>(new Set());
+  const [missingMode, setMissingMode] = useState<"out_of_stock" | "delete">("out_of_stock");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [summary, setSummary] = useState<{ pricesUpdated: number; missingHandled: number; newCreated: number } | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  const start = async () => {
+    setPhase("scanning"); setErrorMsg(""); setPages(0);
+    setPriceChanges([]); setNewProducts([]); setMissingProducts([]);
+    const ac = new AbortController(); abortRef.current = ac;
+    try {
+      const res = await fetch("/api/admin/refresh-prices", { method: "POST", headers: { Authorization: auth }, signal: ac.signal });
+      if (!res.ok || !res.body) {
+        const d = await res.json().catch(() => ({}));
+        setErrorMsg(d?.error || `Eroare ${res.status}`); setPhase("idle"); return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n"); buf = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          let ev: Record<string, unknown>;
+          try { ev = JSON.parse(line); } catch { continue; }
+          if (ev.type === "start") setLabel(String(ev.label || ""));
+          else if (ev.type === "progress") { setPages(Number(ev.pages) || 0); setLabel(String(ev.label || "")); }
+          else if (ev.type === "error") { setErrorMsg(String(ev.error)); setPhase("idle"); }
+          else if (ev.type === "done") {
+            const pc = (ev.priceChanges as PriceChange[]) || [];
+            const np = (ev.newProducts as NewProduct[]) || [];
+            const mp = (ev.missingProducts as MissingProduct[]) || [];
+            setPriceChanges(pc); setNewProducts(np); setMissingProducts(mp);
+            setStats({ supplierTotal: Number(ev.supplierTotal) || 0, ourTotal: Number(ev.ourTotal) || 0, unchanged: Number(ev.unchanged) || 0 });
+            // Preturile se bifeaza singure (e actiunea sigura si asteptata);
+            // produsele noi si cele disparute raman nebifate, sunt decizii.
+            setPickPrices(new Set(pc.map((c) => c.id)));
+            setPickNew(new Set()); setPickMissing(new Set());
+            setTab(pc.length ? "prices" : np.length ? "new" : "missing");
+            setPhase("review");
+          }
+        }
+      }
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") { setErrorMsg(String(e)); setPhase("idle"); }
+    }
+  };
+
+  const apply = async () => {
+    setPhase("applying"); setErrorMsg("");
+    try {
+      const res = await fetch("/api/admin/refresh-prices/apply", {
+        method: "POST",
+        headers: { Authorization: auth, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prices: priceChanges.filter((c) => pickPrices.has(c.id)),
+          newProducts: newProducts.filter((n) => pickNew.has(n.sku)),
+          missing: missingProducts.filter((m) => pickMissing.has(m.id)),
+          missingMode,
+        }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { setErrorMsg(d?.error || `Eroare ${res.status}`); setPhase("review"); return; }
+      setSummary({ pricesUpdated: d.pricesUpdated || 0, missingHandled: d.missingHandled || 0, newCreated: d.newCreated || 0 });
+      setPhase("applied"); onApplied();
+    } catch (e) { setErrorMsg(String(e)); setPhase("review"); }
+  };
+
+  const toggleNum = (set: Set<number>, key: number, applyFn: (s: Set<number>) => void) => {
+    const next = new Set(set);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    applyFn(next);
+  };
+  const toggleStr = (set: Set<string>, key: string, applyFn: (s: Set<string>) => void) => {
+    const next = new Set(set);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    applyFn(next);
+  };
+
+  const totalPicked = pickPrices.size + pickNew.size + pickMissing.size;
+  const busy = phase === "scanning" || phase === "applying";
+
+  return (
+    <div className="ot-modal-overlay" onClick={busy ? undefined : onClose}>
+      <div className="ot-modal price-sync" onClick={(e) => e.stopPropagation()}>
+        <div className="ot-modal__header">
+          <h2>Sincronizare catalog cu mysnep</h2>
+          <button className="ot-modal__close" onClick={onClose} disabled={busy}>&#10005;</button>
+        </div>
+
+        <div className="ot-modal__body">
+          {errorMsg && <div className="price-sync__error">{errorMsg}</div>}
+
+          {phase === "idle" && (
+            <>
+              <p className="price-sync__lead">
+                Se citeste catalogul furnizorului din paginile de categorie si se compara cu al nostru:
+                preturi schimbate, produse noi la ei si produse care nu mai apar la ei.
+                Nu se scrie nimic pana nu bifezi si confirmi.
+              </p>
+              <button className="admin-add-btn" onClick={start}>Porneste verificarea</button>
+            </>
+          )}
+
+          {busy && (
+            <>
+              <div className="price-sync__bar"><div className="price-sync__fill price-sync__fill--indet" /></div>
+              <div className="price-sync__status">
+                {phase === "scanning" ? <><strong>{pages}</strong> pagini citite &mdash; {label}</> : <>Se salveaza...</>}
+              </div>
+            </>
+          )}
+
+          {phase === "review" && (
+            <>
+              <div className="price-sync__summary">
+                <span><strong>{stats.supplierTotal}</strong> la furnizor</span>
+                <span><strong>{stats.ourTotal}</strong> la noi</span>
+                <span><strong>{stats.unchanged}</strong> neschimbate</span>
+              </div>
+
+              <div className="price-sync__tabs">
+                <button className={`price-sync__tab ${tab === "prices" ? "is-active" : ""}`} onClick={() => setTab("prices")}>
+                  Preturi ({priceChanges.length})
+                </button>
+                <button className={`price-sync__tab ${tab === "new" ? "is-active" : ""}`} onClick={() => setTab("new")}>
+                  Noi la furnizor ({newProducts.length})
+                </button>
+                <button className={`price-sync__tab ${tab === "missing" ? "is-active" : ""}`} onClick={() => setTab("missing")}>
+                  Nu mai sunt la ei ({missingProducts.length})
+                </button>
+              </div>
+
+              {tab === "prices" && (
+                priceChanges.length === 0 ? <p className="price-sync__lead">Toate preturile sunt la zi.</p> : (
+                  <>
+                    <button className="price-sync__all" onClick={() => setPickPrices(pickPrices.size === priceChanges.length ? new Set() : new Set(priceChanges.map((c) => c.id)))}>
+                      {pickPrices.size === priceChanges.length ? "Deselecteaza tot" : "Selecteaza tot"}
+                    </button>
+                    <div className="price-sync__list">
+                      {priceChanges.map((c) => (
+                        <label key={c.id} className="price-sync__row">
+                          <input type="checkbox" checked={pickPrices.has(c.id)} onChange={() => toggleNum(pickPrices, c.id, setPickPrices)} />
+                          <span className="price-sync__name">{c.name} &middot; {c.sku}</span>
+                          <span className="price-sync__old">{c.oldDisplay}</span>
+                          <span className="price-sync__arrow">&rarr;</span>
+                          <span className={`price-sync__new ${c.newDisplay > c.oldDisplay ? "is-up" : "is-down"}`}>{c.newDisplay} RON</span>
+                        </label>
+                      ))}
+                    </div>
+                  </>
+                )
+              )}
+
+              {tab === "new" && (
+                newProducts.length === 0 ? <p className="price-sync__lead">Nu au produse noi fata de noi.</p> : (
+                  <>
+                    <p className="price-sync__lead">
+                      Se creeaza ca schelet: nume, cod, pret, link catre mysnep si categoria dedusa.
+                      Descrierea si imaginile le completezi din editorul de produs.
+                    </p>
+                    <button className="price-sync__all" onClick={() => setPickNew(pickNew.size === newProducts.length ? new Set() : new Set(newProducts.map((n) => n.sku)))}>
+                      {pickNew.size === newProducts.length ? "Deselecteaza tot" : "Selecteaza tot"}
+                    </button>
+                    <div className="price-sync__list">
+                      {newProducts.map((n) => (
+                        <label key={n.sku} className="price-sync__row">
+                          <input type="checkbox" checked={pickNew.has(n.sku)} onChange={() => toggleStr(pickNew, n.sku, setPickNew)} />
+                          <span className="price-sync__name">
+                            <a href={n.url} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()}>{n.name}</a> &middot; {n.sku}
+                          </span>
+                          <span className="price-sync__cat">{n.category || "fara categorie"}</span>
+                          <span className="price-sync__new">{n.price != null ? `${Math.ceil(n.price)} RON` : "—"}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </>
+                )
+              )}
+
+              {tab === "missing" && (
+                missingProducts.length === 0 ? <p className="price-sync__lead">Toate produsele noastre exista si la furnizor.</p> : (
+                  <>
+                    <p className="price-sync__lead">
+                      Nu apar in listarile furnizorului. Atentie la cele marcate
+                      &bdquo;probabil redenumit&rdquo;: furnizorul a schimbat codul (4000236K &rarr; 4000236),
+                      deci produsul apare si in tabul &bdquo;Noi la furnizor&rdquo; &mdash; nu le sterge, ca sa
+                      nu pierzi pagina si link-urile indexate. De aceea implicit doar le marcam indisponibile.
+                    </p>
+                    <div className="price-sync__mode">
+                      <label>
+                        <input type="radio" checked={missingMode === "out_of_stock"} onChange={() => setMissingMode("out_of_stock")} />
+                        Marcheaza indisponibil (pastreaza pagina si link-urile)
+                      </label>
+                      <label>
+                        <input type="radio" checked={missingMode === "delete"} onChange={() => setMissingMode("delete")} />
+                        Sterge definitiv
+                      </label>
+                    </div>
+                    <button className="price-sync__all" onClick={() => setPickMissing(pickMissing.size === missingProducts.length ? new Set() : new Set(missingProducts.map((m) => m.id)))}>
+                      {pickMissing.size === missingProducts.length ? "Deselecteaza tot" : "Selecteaza tot"}
+                    </button>
+                    <div className="price-sync__list">
+                      {missingProducts.map((m) => (
+                        <label key={m.id} className="price-sync__row">
+                          <input type="checkbox" checked={pickMissing.has(m.id)} onChange={() => toggleNum(pickMissing, m.id, setPickMissing)} />
+                          <span className="price-sync__name">{m.name} &middot; {m.sku}</span>
+                          <span className="price-sync__cat">
+                            {m.renamedTo
+                              ? `probabil redenumit in ${m.renamedTo}`
+                              : m.alreadyOut ? "deja indisponibil" : ""}
+                          </span>
+                          <span className="price-sync__old">{m.price != null ? `${Math.ceil(Number(m.price))} RON` : "—"}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </>
+                )
+              )}
+
+              <div className="price-sync__actions">
+                <button className="admin-add-btn" onClick={apply} disabled={totalPicked === 0}>
+                  Aplica {totalPicked > 0 ? `(${totalPicked})` : ""}
+                </button>
+                <button className="admin-inline-btn" onClick={onClose}>Renunta</button>
+                <span className="price-sync__picked">
+                  {pickPrices.size} preturi &middot; {pickNew.size} noi &middot; {pickMissing.size} {missingMode === "delete" ? "de sters" : "indisponibile"}
+                </span>
+              </div>
+            </>
+          )}
+
+          {phase === "applied" && summary && (
+            <>
+              <p className="price-sync__lead">
+                Gata: <strong>{summary.pricesUpdated}</strong> preturi actualizate,{" "}
+                <strong>{summary.newCreated}</strong> produse noi create,{" "}
+                <strong>{summary.missingHandled}</strong> {missingMode === "delete" ? "sterse" : "marcate indisponibil"}.
+              </p>
+              <button className="admin-inline-btn" onClick={onClose}>Inchide</button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
