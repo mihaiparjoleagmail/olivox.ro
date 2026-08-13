@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { getAdminAuth } from "@/lib/admin-auth";
 
 interface CategoryData {
   id: number;
@@ -35,7 +36,7 @@ export default function EditCategoryPage() {
   const [csResults, setCsResults] = useState<Array<{id: number; name: string; price: number; r2_image_url?: string; image_url?: string}>>([]);
   const [csSearching, setCsSearching] = useState(false);
 
-  const auth = typeof window !== "undefined" ? sessionStorage.getItem("admin_auth") || "" : "";
+  const auth = getAdminAuth();
 
   useEffect(() => {
     fetch(`/api/admin/categories/${id}`, { headers: { Authorization: auth } })

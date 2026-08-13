@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 import "react-quill-new/dist/quill.snow.css";
+import { getAdminAuth } from "@/lib/admin-auth";
 
 interface CategoryItem {
   id: number;
@@ -45,7 +46,7 @@ export default function NewProductPage() {
   const [metaDescription, setMetaDescription] = useState("");
   const [keywords, setKeywords] = useState("");
 
-  const auth = typeof window !== "undefined" ? sessionStorage.getItem("admin_auth") || "" : "";
+  const auth = getAdminAuth();
 
   useEffect(() => {
     fetch("/api/categories")

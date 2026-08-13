@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 import "react-quill-new/dist/quill.snow.css";
+import { getAdminAuth } from "@/lib/admin-auth";
 
 interface ProductData {
   id: number;
@@ -57,7 +58,7 @@ export default function EditProductPage() {
   const [imgFile, setImgFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
-  const auth = typeof window !== "undefined" ? sessionStorage.getItem("admin_auth") || "" : "";
+  const auth = getAdminAuth();
 
   useEffect(() => {
     fetch(`/api/admin/products/${id}`, { headers: { Authorization: auth } })

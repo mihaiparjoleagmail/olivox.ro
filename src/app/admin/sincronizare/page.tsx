@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { getAdminAuth } from "@/lib/admin-auth";
 
 interface PriceChange { id: number; name: string; sku: string; oldDisplay: number; newDisplay: number; newPrice: number }
 interface StockChange { id: number; name: string; sku: string; from: string; to: string }
@@ -54,7 +55,7 @@ export default function SincronizarePage() {
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    const a = sessionStorage.getItem("admin_auth") || "";
+    const a = getAdminAuth();
     setAuth(a);
     if (!a) { setLoading(false); return; }
     fetch("/api/admin/sync", { headers: { Authorization: a } })
