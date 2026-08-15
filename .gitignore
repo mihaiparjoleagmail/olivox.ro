@@ -48,3 +48,7 @@ next-env.d.ts
 .mysnep-session.json
 
 .vercel
+
+# fisiere de lucru temporare
+scripts/_tmp-*
+scripts/_dump.*
