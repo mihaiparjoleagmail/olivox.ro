@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { isNoindexProduct } from "@/lib/noindex";
 
 const BASE = "https://olivox.ro";
 
@@ -35,6 +36,8 @@ export async function GET() {
   const urls: string[] = [];
   for (const p of rows) {
     if (!p.slug || !p.category_slugs || p.category_slugs.length === 0) continue;
+    // Acelasi motiv ca la sitemap.ts: paginile noindex n-au ce cauta aici.
+    if (isNoindexProduct(p.slug, p.category_slugs)) continue;
     const image = p.r2_image_url || p.image_url;
     if (!image) continue;
     const loc = `${BASE}/produse/${p.category_slugs[0]}/${p.slug}`;

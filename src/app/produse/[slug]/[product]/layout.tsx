@@ -3,6 +3,7 @@ import { getProduct, getCategoryName, stripHtml, truncate } from "./product-data
 import { getSiteConfig, resolveShippingCost, describeTiers } from "@/lib/site-config";
 import { schemaPrice } from "@/lib/price";
 import { buildProductTitle } from "@/lib/product-title";
+import { isNoindexProduct } from "@/lib/noindex";
 
 interface Props {
   params: Promise<{ slug: string; product: string }>;
@@ -33,11 +34,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const image = product.r2_image_url || product.image_url || "https://olivox.ro/og-default.jpg";
   const url = `https://olivox.ro/produse/${categorySlug}/${productSlug}`;
 
+  // Merch-ul de reprezentare iese din index, dar ramane accesibil pe site si
+  // legaturile din el se urmaresc mai departe.
+  const noindex = isNoindexProduct(productSlug, product.category_slugs);
+
   return {
     title,
     description,
     keywords: product.keywords || undefined,
     alternates: { canonical: url },
+    ...(noindex ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title, description, url,
       siteName: "olivox.ro", type: "website", locale: "ro_RO",

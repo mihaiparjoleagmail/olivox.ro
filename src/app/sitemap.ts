@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { supabase } from "@/lib/supabase";
+import { isNoindexProduct } from "@/lib/noindex";
 
 const BASE = "https://olivox.ro";
 
@@ -110,7 +111,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .limit(5000)
   );
   const productUrls: MetadataRoute.Sitemap = products
+    // Merch-ul e noindex — a-l tine in sitemap ar insemna sa-i cerem lui Google
+    // sa crawleze exact paginile pe care i le-am scos din index.
     .filter((p) => p.slug && p.category_slugs && p.category_slugs.length > 0)
+    .filter((p) => !isNoindexProduct(p.slug, p.category_slugs))
     .map((p) => {
       const img = absUrl(p.r2_image_url) || absUrl(p.image_url);
       return {

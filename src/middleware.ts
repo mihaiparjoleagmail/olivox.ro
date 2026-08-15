@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { SLUG_REDIRECTS } from "@/lib/slug-redirects";
 
 // Known routes in the new app - if a request doesn't match any of these,
 // we treat it as a legacy URL and 301 to /categorii.
@@ -59,6 +60,20 @@ export async function middleware(req: NextRequest) {
       }
     } catch {}
     return NextResponse.redirect(new URL("/categorii", req.url), 301);
+  }
+
+  // Slug-uri reparate: /produse/<categorie>/<slug-vechi> -> .../<slug-nou>.
+  // Categoria ramane cea din URL, se schimba doar ultimul segment. Unele dintre
+  // URL-urile astea erau deja clasate, deci 301, nu 404.
+  const legacySlug = pathname.match(/^\/produse\/([^/]+)\/([^/]+)\/?$/);
+  if (legacySlug) {
+    const target = SLUG_REDIRECTS[legacySlug[2]];
+    if (target) {
+      return NextResponse.redirect(
+        new URL(`/produse/${legacySlug[1]}/${target}`, req.url),
+        301
+      );
+    }
   }
 
   // Skip homepage, static assets, and known prefixes
