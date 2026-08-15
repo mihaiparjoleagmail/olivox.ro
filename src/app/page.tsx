@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getSiteConfig } from "@/lib/site-config";
 import { displayPrice } from "@/lib/price";
+import { PILLARS } from "@/lib/pillars";
 
 const OPTIMIZED_IMG_HOSTS = ["media.ghidulfunerar.ro", "huse.gravpoint.ro"];
 function canOptimize(url: string | null | undefined): boolean {
@@ -144,6 +145,24 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/*
+        Legaturile astea nu sunt decor: pana in august 2026 ghidurile primeau
+        legaturi doar din paginile de produs si din sitemap, iar patru din cinci
+        nu apucasera sa fie indexate. Prima pagina e cea mai puternica pagina a
+        site-ului, deci de aici pleaca votul.
+      */}
+      <section className="home-section">
+        <h2 className="home-section__title">Ghiduri complete</h2>
+        <div className="home-guides">
+          {PILLARS.map((pillar) => (
+            <a key={pillar.href} href={pillar.href} className="home-guide">
+              <h3 className="home-guide__title">{pillar.title}</h3>
+              <p className="home-guide__text">{pillar.short}</p>
+            </a>
+          ))}
+        </div>
+      </section>
 
       <Footer />
     </div>

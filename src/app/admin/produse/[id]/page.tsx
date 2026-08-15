@@ -244,7 +244,7 @@ export default function EditProductPage() {
             <h3>SEO</h3>
             <div className="admin-edit-field">
               <label>Meta Title</label>
-              <input type="text" value={prod.meta_title || ""} onChange={(e) => setProd({ ...prod, meta_title: e.target.value })} placeholder={`${prod.name} | olivox.ro`} />
+              <input type="text" value={prod.meta_title || ""} onChange={(e) => setProd({ ...prod, meta_title: e.target.value })} placeholder={`${prod.name} Snep`} />
             </div>
             <div className="admin-edit-field">
               <label>Meta Description</label>

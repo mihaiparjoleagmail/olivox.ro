@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import type { Metadata } from "next";
 import { displayPrice } from "@/lib/price";
+import { pillarsForCategory } from "@/lib/pillars";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -137,6 +138,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   ]);
 
   const descriptionHtml = (category?.description || "").trim();
+  const categoryPillars = pillarsForCategory(slug);
   const faq = CATEGORY_FAQ[slug] || [];
   const titleCase = (s: string) => (s || "").toLowerCase().split(" ").map((w: string) => w.length ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
   const displayName = titleCase(category?.name || slug);
@@ -155,6 +157,18 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       <div className="cat-header">
         <h1 className="cat-header__title">{displayName}</h1>
       </div>
+
+      {/* Ghidul categoriei, doar pe pagina 1 — paginile 2+ sunt noindex, deci
+          o legatura de acolo nu ar transmite nimic. */}
+      {page === 1 && categoryPillars.length > 0 && (
+        <div className="cat-guides">
+          {categoryPillars.map((pillar) => (
+            <a key={pillar.href} href={pillar.href} className="cat-guide">
+              {pillar.title} →
+            </a>
+          ))}
+        </div>
+      )}
 
       {products.length === 0 ? (
         <div className="products-loading">Niciun produs in aceasta categorie.</div>

@@ -3,7 +3,7 @@ import Footer from "@/components/Footer";
 import { getSiteConfig, describeTiers } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "Termeni si Conditii | olivox.ro",
+  title: "Termeni si conditii",
   description: "Termeni si conditii de utilizare a site-ului olivox.ro. Informatii despre comenzi, livrare, returnare si garantie.",
   alternates: { canonical: "https://olivox.ro/termeni-si-conditii" },
   robots: { index: true, follow: true },

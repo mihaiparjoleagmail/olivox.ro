@@ -42,7 +42,7 @@ function SearchContent() {
   }, [query, page]);
 
   useEffect(() => {
-    document.title = query ? `Cautare: ${query} | olivox.ro` : "Cautare | olivox.ro";
+    document.title = query ? `Cautare: ${query}` : "Cauta in catalogul Snep";
   }, [query]);
 
   return (

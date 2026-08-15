@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Cautare | olivox.ro",
+  title: "Cauta in catalogul Snep",
   description: "Cauta produse Snep pe olivox.ro — suplimente alimentare, cosmetice naturale si alimente functionale.",
   alternates: { canonical: "https://olivox.ro/cautare" },
   robots: {

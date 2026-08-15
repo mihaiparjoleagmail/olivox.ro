@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getProduct, getCategoryName, stripHtml, truncate } from "./product-data";
 import { getSiteConfig, resolveShippingCost, describeTiers } from "@/lib/site-config";
 import { schemaPrice } from "@/lib/price";
+import { buildProductTitle } from "@/lib/product-title";
 
 interface Props {
   params: Promise<{ slug: string; product: string }>;
@@ -14,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!product) {
     return {
-      title: "Produs negasit | olivox.ro",
+      title: "Produs negasit",
       description: "Produsul cautat nu a fost gasit.",
       robots: { index: false, follow: true },
     };
@@ -22,8 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const plainShort = stripHtml(product.short_description);
   const plainDesc = plainShort || stripHtml(product.description).slice(0, 160);
-  const rawTitle = product.meta_title || `${product.name} | olivox.ro`;
-  const title = truncate(rawTitle, 60);
+  const title = buildProductTitle(product.meta_title, product.name, product.price);
   const description = truncate(
     product.meta_description || plainDesc || `${product.name} — ${product.price} RON. Comanda acum pe olivox.ro.`,
     160

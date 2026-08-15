@@ -41,13 +41,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!category) {
     return {
-      title: "Categorie negasita | olivox.ro",
+      title: "Categorie negasita",
       description: "Categoria cautata nu a fost gasita.",
       robots: { index: false, follow: true },
     };
   }
 
-  const rawTitle = category.meta_title || `${category.name} | olivox.ro`;
+  const rawTitle = category.meta_title || `${category.name} Snep`;
   const title = truncate(rawTitle, 60);
   const plainDesc = (category.description || "").replace(/<[^>]+>/g, "").trim().slice(0, 160);
   const description = truncate(

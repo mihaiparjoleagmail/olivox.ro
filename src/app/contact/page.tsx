@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 import { getSiteConfig, describeTiers } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "Contact | olivox.ro",
+  title: "Contact — consultanta si comenzi produse Snep",
   description: "Contacteaza echipa Olivox pentru intrebari despre produse sau comenzi. Telefon, email, livrare in 3-5 zile lucratoare.",
   robots: { index: true, follow: true },
 };

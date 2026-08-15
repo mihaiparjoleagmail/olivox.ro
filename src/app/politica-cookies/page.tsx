@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Politica Cookies | olivox.ro",
+  title: "Politica de cookies",
   description: "Informatii despre cookie-urile utilizate pe site-ul olivox.ro si modul in care le puteti gestiona.",
   alternates: { canonical: "https://olivox.ro/politica-cookies" },
   robots: { index: true, follow: true },

@@ -186,7 +186,7 @@ export default function EditCategoryPage() {
           <h3 style={{ marginTop: 20 }}>SEO</h3>
           <div className="admin-edit-field">
             <label>Meta Title</label>
-            <input type="text" value={cat.meta_title || ""} onChange={(e) => setCat({ ...cat, meta_title: e.target.value })} placeholder={`${cat.name} | olivox.ro`} />
+            <input type="text" value={cat.meta_title || ""} onChange={(e) => setCat({ ...cat, meta_title: e.target.value })} placeholder={`${cat.name} Snep`} />
           </div>
           <div className="admin-edit-field">
             <label>Meta Description</label>

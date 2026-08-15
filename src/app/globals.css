@@ -4037,3 +4037,82 @@ h2.eyebrow { margin: 0 0 14px; }
 .product-card__name {
   overflow-wrap: anywhere;
 }
+
+/* Ghidurile complete de pe prima pagina si din capul categoriilor.
+   Legaturi interne, nu decor: ghidurile primeau vot doar din paginile de
+   produs, si patru din cinci ramasesera neindexate. */
+.home-guides {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .home-guides {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-guides {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.home-guide {
+  display: block;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.home-guide:hover,
+.home-guide:focus-visible {
+  border-color: var(--color-primary-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.home-guide__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 4px;
+}
+
+.home-guide__text {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+/* In capul categoriei: o singura linie, ca sa nu impinga grila de produse. */
+.cat-guides {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.cat-guide {
+  display: inline-block;
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.cat-guide:hover,
+.cat-guide:focus-visible {
+  background: var(--color-surface);
+  border-color: var(--color-primary-soft);
+}

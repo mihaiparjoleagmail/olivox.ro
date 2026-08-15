@@ -193,7 +193,7 @@ export default function NewProductPage() {
             <h3>SEO</h3>
             <div className="admin-edit-field">
               <label>Meta Title</label>
-              <input type="text" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} placeholder={`${name} | olivox.ro`} />
+              <input type="text" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} placeholder={`${name} Snep`} />
             </div>
             <div className="admin-edit-field">
               <label>Meta Description</label>

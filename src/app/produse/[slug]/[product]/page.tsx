@@ -4,6 +4,7 @@ import { getProduct, getRelatedProducts, stripHtml } from "./product-data";
 import { getSiteConfig } from "@/lib/site-config";
 import OrderForm from "./OrderForm";
 import { displayPrice } from "@/lib/price";
+import { pillarForProduct } from "@/lib/pillars";
 
 interface Props {
   params: Promise<{ slug: string; product: string }>;
@@ -23,44 +24,6 @@ const SUPPLEMENT_CATEGORIES = new Set([
 ]);
 
 // Product families that have a pillar guide. First match wins.
-const PILLAR_GUIDES: { match: RegExp; href: string; title: string; blurb: string }[] = [
-  {
-    match: /^oliv/i,
-    href: "/olivox-supliment-antioxidant",
-    title: "Ghid complet Olivox",
-    blurb:
-      "ce inseamna extractul titrat de frunze de maslin, diferenta dintre capsule, sticla si Olivox 40, mod de utilizare si contraindicatii.",
-  },
-  {
-    match: /^kalo/i,
-    href: "/kalosnep",
-    title: "Ghid complet KaloSnep",
-    blurb:
-      "diferenta dintre plicuri, capsule si Kalogel, compozitia cu cifrele de pe eticheta, administrare si avertismentele importante.",
-  },
-  {
-    // `trico[- ]salus`, not `trico`, so the TRICOU t-shirts never match.
-    match: /^trico[- ]salus/i,
-    href: "/trico-salus",
-    title: "Ghid complet Trico-Salus",
-    blurb:
-      "protocoalele recomandate pentru matreata, scalp gras, scalp uscat si rarire, ce contine fiecare sampon si cand e cazul sa mergi la dermatolog.",
-  },
-  {
-    match: /^sneplumina/i,
-    href: "/sneplumina",
-    title: "Ghid complet SnepLumina",
-    blurb:
-      "ce contine fiecare produs, rutina in trei pasi, ce inseamna exact claim-urile de pe eticheta si cand ai nevoie de Trico-Salus in loc.",
-  },
-  {
-    match: /^realfibre/i,
-    href: "/realfibre",
-    title: "Ghid complet RealFibre",
-    blurb:
-      "prebiotic, nu probiotic — compozitia in cifre, diferenta dintre pudra, plicuri si comprimate si ce sa astepti in primele zile.",
-  },
-];
 
 function isOptimized(url: string): boolean {
   try {
@@ -90,9 +53,7 @@ export default async function ProductPage({ params }: Props) {
   const needsDisclaimer = categories.some((c) => SUPPLEMENT_CATEGORIES.has(c));
   const related = await getRelatedProducts(categorySlug, product.slug);
   const { shippingCost, shippingTiers, shippingLabel } = await getSiteConfig();
-  const pillar = PILLAR_GUIDES.find(
-    (p) => p.match.test(product.slug) || p.match.test(product.name)
-  );
+  const pillar = pillarForProduct(product.slug, product.name);
 
   return (
     <div className="pd-wrap">

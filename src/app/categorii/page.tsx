@@ -25,7 +25,7 @@ export default function CategoriiPage() {
   }, []);
 
   useEffect(() => {
-    document.title = "Categorii produse | olivox.ro";
+    document.title = "Toate categoriile de produse Snep";
   }, []);
 
   return (

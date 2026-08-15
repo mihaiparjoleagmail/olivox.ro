@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Articole | olivox.ro",
+  title: "Articole despre suplimente si cosmetice Snep",
   description: "Articole si noutati despre ulei de masline, suplimente naturale si produse premium.",
   alternates: { canonical: "https://olivox.ro/articole" },
 };

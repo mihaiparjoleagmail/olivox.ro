@@ -39,9 +39,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const article = await getArticle(slug);
   if (!article) {
-    return { title: "Articol negasit | olivox.ro", robots: { index: false, follow: true } };
+    return { title: "Articol negasit", robots: { index: false, follow: true } };
   }
-  const rawTitle = article.meta_title || `${article.title} | olivox.ro`;
+  const rawTitle = article.meta_title || article.title;
   const title = truncate(rawTitle, 60);
   const description = truncate(article.meta_description || article.excerpt || article.title, 160);
   const url = `https://olivox.ro/articole/${slug}`;
