@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getProduct, getCategoryName, stripHtml, truncate } from "./product-data";
 import { getSiteConfig, resolveShippingCost, describeTiers } from "@/lib/site-config";
 import { schemaPrice } from "@/lib/price";
-import { buildProductTitle } from "@/lib/product-title";
+import { buildProductTitle, productDisplayName } from "@/lib/product-title";
 import { isNoindexProduct } from "@/lib/noindex";
 
 interface Props {
@@ -143,6 +143,7 @@ export default async function ProductLayout({ params, children }: Props) {
   const warnings = stripHtml(product.warnings);
   const certifs = stripHtml(product.certifications);
   const datasheetUrl = product.datasheet_r2_url || product.datasheet_url || "";
+  const displayName = productDisplayName(product.meta_title, product.name);
 
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -170,11 +171,11 @@ export default async function ProductLayout({ params, children }: Props) {
         // „<produs> prospect" e una dintre cele mai constante intentii din GSC
         // („realcomplex prospect" poz. 9,1, „burner snep prospect" 12,4).
         "@type": "Question",
-        name: `Unde gasesc prospectul pentru ${product.name}?`,
+        name: `Unde gasesc prospectul pentru ${displayName}?`,
         acceptedAnswer: {
           "@type": "Answer",
           text:
-            `Prospectul ${product.name} este pe aceasta pagina, in sectiunea Prospect: compozitia completa cu cantitatile de pe eticheta, modul de administrare recomandat de producator, avertismentele si contraindicatiile.` +
+            `Prospectul ${displayName} este pe aceasta pagina, in sectiunea Prospect: compozitia completa cu cantitatile de pe eticheta, modul de administrare recomandat de producator, avertismentele si contraindicatiile.` +
             (datasheetUrl ? " Fisa tehnica a producatorului se poate descarca in format PDF din aceeasi sectiune." : ""),
         },
       },

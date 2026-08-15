@@ -5,6 +5,7 @@ import { getSiteConfig } from "@/lib/site-config";
 import OrderForm from "./OrderForm";
 import { displayPrice } from "@/lib/price";
 import { pillarForProduct } from "@/lib/pillars";
+import { productDisplayName } from "@/lib/product-title";
 
 interface Props {
   params: Promise<{ slug: string; product: string }>;
@@ -51,6 +52,7 @@ export default async function ProductPage({ params }: Props) {
 
   const categories = product.category_slugs || [];
   const needsDisclaimer = categories.some((c) => SUPPLEMENT_CATEGORIES.has(c));
+  const displayName = productDisplayName(product.meta_title, product.name);
   const datasheet = product.datasheet_r2_url || product.datasheet_url || "";
   const hasProspect = Boolean(
     product.ingredients || product.usage_info || product.warnings || product.certifications || datasheet
@@ -140,7 +142,7 @@ export default async function ProductPage({ params }: Props) {
       */}
       {hasProspect && (
         <section className="pd-prospect" id="prospect">
-          <h2 className="pd-prospect__title">Prospect {product.name}</h2>
+          <h2 className="pd-prospect__title">Prospect {displayName}</h2>
           <p className="pd-prospect__intro">
             Informatiile de mai jos sunt cele de pe eticheta producatorului: compozitie,
             mod de administrare si contraindicatii. Citeste-le inainte de achizitie.

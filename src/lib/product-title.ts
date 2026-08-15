@@ -31,6 +31,23 @@ function trimToWord(str: string, max: number): string {
   return (lastSpace > max * 0.5 ? cut.slice(0, lastSpace) : cut).replace(/[\s,\-–—+&]+$/, "");
 }
 
+/**
+ * Numele produsului asa cum se scrie intr-un text, nu asa cum sta in DB.
+ *
+ * In baza de date numele vin cu majuscule de la furnizor („REALCOMPLEX"), ceea
+ * ce intr-o propozitie arata a tipat. Eticheta din `meta_title` e deja curatata
+ * si scrisa corect, deci se ia din ea partea dinaintea primei virgule, fara
+ * marca — „RealComplex Snep, 30 plicuri" devine „RealComplex".
+ */
+export function productDisplayName(
+  metaTitle: string | null | undefined,
+  name: string
+): string {
+  const label = (metaTitle || "").trim();
+  if (!label) return name;
+  return label.split(",")[0].replace(/\s+Snep\b/i, "").trim() || name;
+}
+
 export function buildProductTitle(
   metaTitle: string | null | undefined,
   name: string,
