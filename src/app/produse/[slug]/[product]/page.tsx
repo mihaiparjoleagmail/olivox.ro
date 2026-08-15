@@ -51,6 +51,10 @@ export default async function ProductPage({ params }: Props) {
 
   const categories = product.category_slugs || [];
   const needsDisclaimer = categories.some((c) => SUPPLEMENT_CATEGORIES.has(c));
+  const datasheet = product.datasheet_r2_url || product.datasheet_url || "";
+  const hasProspect = Boolean(
+    product.ingredients || product.usage_info || product.warnings || product.certifications || datasheet
+  );
   const related = await getRelatedProducts(categorySlug, product.slug);
   const { shippingCost, shippingTiers, shippingLabel } = await getSiteConfig();
   const pillar = pillarForProduct(product.slug, product.name);
@@ -88,6 +92,12 @@ export default async function ProductPage({ params }: Props) {
 
           {shortClipped && <p className="pd-hero__short">{shortClipped}</p>}
 
+          {hasProspect && (
+            <a href="#prospect" className="pd-hero__prospect">
+              Vezi prospectul: compozitie, administrare, contraindicatii
+            </a>
+          )}
+
           <div className="pd-hero__price-row">
             <div className="pd-hero__price">
               {displayPrice(price)} <span className="pd-hero__currency">{currency}</span>
@@ -117,39 +127,61 @@ export default async function ProductPage({ params }: Props) {
             <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.description }} />
           </article>
         )}
-        {product.ingredients && (
-          <article className="pd-card">
-            <h2 className="eyebrow">Ce este inauntru</h2>
-            <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.ingredients }} />
-          </article>
-        )}
-        {product.usage_info && (
-          <article className="pd-card">
-            <h2 className="eyebrow">Mod de utilizare</h2>
-            <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.usage_info }} />
-          </article>
-        )}
-        {product.warnings && (
-          <article className="pd-card pd-card--warn">
-            <h2 className="eyebrow">Avertismente</h2>
-            <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.warnings }} />
-          </article>
-        )}
-        {product.certifications && (
-          <article className="pd-card pd-card--certifications">
-            <h2 className="eyebrow">Certificari</h2>
-            <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.certifications }} />
-          </article>
-        )}
-        {(product.datasheet_r2_url || product.datasheet_url) && (
-          <article className="pd-card">
-            <h2 className="eyebrow">Specificatii tehnice</h2>
-            <a href={product.datasheet_r2_url || product.datasheet_url || "#"} target="_blank" rel="noopener" className="pd-card__pdf">
-              Descarca fisa produs (PDF)
-            </a>
-          </article>
-        )}
       </div>
+
+      {/*
+        Compozitia, administrarea si avertismentele erau deja pe pagina, dar
+        imprastiate si fara sa apara vreodata cuvantul pe care il cauta lumea.
+        In Search Console, „<produs> prospect" e o intentie constanta —
+        „realcomplex prospect" (poz. 9,1), „burner snep prospect" (12,4),
+        „kalosnep prospect", „olivox prospect" — la fel „administrare" si
+        „contraindicatii". Aceleasi date, grupate sub numele lor real, cu ancora
+        proprie ca sa se poata da link direct din raspunsuri si din WhatsApp.
+      */}
+      {hasProspect && (
+        <section className="pd-prospect" id="prospect">
+          <h2 className="pd-prospect__title">Prospect {product.name}</h2>
+          <p className="pd-prospect__intro">
+            Informatiile de mai jos sunt cele de pe eticheta producatorului: compozitie,
+            mod de administrare si contraindicatii. Citeste-le inainte de achizitie.
+          </p>
+
+          <div className="pd-cards">
+            {product.ingredients && (
+              <article className="pd-card">
+                <h3 className="eyebrow">Compozitie si ingrediente</h3>
+                <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.ingredients }} />
+              </article>
+            )}
+            {product.usage_info && (
+              <article className="pd-card">
+                <h3 className="eyebrow">Mod de utilizare si administrare</h3>
+                <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.usage_info }} />
+              </article>
+            )}
+            {product.warnings && (
+              <article className="pd-card pd-card--warn">
+                <h3 className="eyebrow">Avertismente si contraindicatii</h3>
+                <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.warnings }} />
+              </article>
+            )}
+            {product.certifications && (
+              <article className="pd-card pd-card--certifications">
+                <h3 className="eyebrow">Certificari</h3>
+                <div className="pd-card__body" dangerouslySetInnerHTML={{ __html: product.certifications }} />
+              </article>
+            )}
+            {datasheet && (
+              <article className="pd-card">
+                <h3 className="eyebrow">Fisa tehnica</h3>
+                <a href={datasheet} target="_blank" rel="noopener" className="pd-card__pdf">
+                  Descarca prospectul complet (PDF)
+                </a>
+              </article>
+            )}
+          </div>
+        </section>
+      )}
 
       {pillar && (
         <a href={pillar.href} className="pd-pillar-link">

@@ -142,6 +142,7 @@ export default async function ProductLayout({ params, children }: Props) {
   const usage = stripHtml(product.usage_info);
   const warnings = stripHtml(product.warnings);
   const certifs = stripHtml(product.certifications);
+  const datasheetUrl = product.datasheet_r2_url || product.datasheet_url || "";
 
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -163,6 +164,18 @@ export default async function ProductLayout({ params, children }: Props) {
           "@type": "Answer",
           text:
             "Da, conform legii ai dreptul sa te retragi in 14 zile de la primire, fara a justifica decizia, atat timp cat produsul este sigilat si in ambalajul original. Cererea se transmite catre Snep, vanzatorul produselor, iar rambursarea se face pe cardul folosit la plata, in maximum 14 zile. Olivox te ajuta cu procedura.",
+        },
+      },
+      {
+        // „<produs> prospect" e una dintre cele mai constante intentii din GSC
+        // („realcomplex prospect" poz. 9,1, „burner snep prospect" 12,4).
+        "@type": "Question",
+        name: `Unde gasesc prospectul pentru ${product.name}?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text:
+            `Prospectul ${product.name} este pe aceasta pagina, in sectiunea Prospect: compozitia completa cu cantitatile de pe eticheta, modul de administrare recomandat de producator, avertismentele si contraindicatiile.` +
+            (datasheetUrl ? " Fisa tehnica a producatorului se poate descarca in format PDF din aceeasi sectiune." : ""),
         },
       },
       {

@@ -36,6 +36,10 @@ function buildFaqs(shippingText: string): { q: string; a: string }[] { return [
     a: "Da. Ai 14 zile calendaristice de la primire pentru retragere, conform OUG 34/2014 si conditiilor Snep. Cererea se transmite in scris catre Snep, la info@mysnep.com — te ajutam noi sa o intocmesti. Produsele se trimit inapoi in ambalajul original, pe cheltuiala clientului, iar Snep ramburseaza suma in maximum 14 zile, pe cardul folosit la plata. Produsele sigilate (suplimente) pot fi returnate doar daca sigiliul nu a fost rupt. Detalii in pagina Livrare si retur.",
   },
   {
+    q: "Gasesc produsele Snep in farmacii sau pe eMAG?",
+    a: "Nu. Snep lucreaza pe distributie directa, prin distribuitori autorizati, deci nu exista raft de farmacie cu produse Snep — nici la Catena, Dr. Max, Tei sau Plafar — iar farmacistul nu le poate comanda nici la cerere. Distribuitorii nu au voie prin contract sa vanda pe eMAG, OLX sau alte marketplace-uri. Preturile sunt cele de catalog ale producatorului, aceleasi in toata tara.",
+  },
+  {
     q: "Produsele Olivox sunt originale?",
     a: "Da. Olivox este distribuitor al catalogului Snep. Toate produsele sunt importate direct, in ambalajul original al producatorului, cu eticheta in limba romana conforma cu Regulamentul UE 1169/2011.",
   },

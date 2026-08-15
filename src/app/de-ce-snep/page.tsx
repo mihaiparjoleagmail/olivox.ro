@@ -97,6 +97,32 @@ export default function DeCeSnepPage() {
             <a href="/articole">articolele noastre</a> pentru context si recomandari.
           </p>
         </section>
+
+        {/* Raspunde intentiei „olivox emag" / „olivox pret farmacie" direct in
+            pagina care se claseaza deja pe brand, nu doar in articol. */}
+        <section>
+          <h2>De ce nu gasesti produsele Snep in farmacii sau pe eMAG</h2>
+          <p>
+            Snep lucreaza pe un model de <strong>distributie directa</strong>: produsele merg de la fabrica la
+            client prin reteaua de distribuitori autorizati, fara lanturi intermediare de retail. De aceea nu
+            exista raft de farmacie cu produse Snep — nu la Catena, nu la Dr. Max, nu la Tei sau Plafar — si
+            farmacistul nu le poate comanda nici la cerere.
+          </p>
+          <p>
+            La fel, distribuitorii autorizati nu au voie prin contract sa vanda pe marketplace-uri: eMAG, OLX,
+            Amazon si altele sunt excluse explicit. Motivul e trasabilitatea — pe un marketplace nu poti garanta
+            lantul de la fabrica la client, nici conditiile de depozitare, nici ca lotul e in termen.
+          </p>
+          <p>
+            Preturile sunt cele de catalog ale producatorului, aceleasi pentru orice distribuitor autorizat din
+            Romania. Detalii complete, inclusiv ce faci daca vezi un produs cu nume asemanator intr-o farmacie,
+            in articolul{" "}
+            <a href="/articole/produse-snep-in-farmacii-catena-dr-max-plafar">
+              „Se gasesc produsele Snep in farmacii?"
+            </a>
+            .
+          </p>
+        </section>
       </article>
       <Footer />
     </div>
