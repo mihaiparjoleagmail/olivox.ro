@@ -17,15 +17,23 @@ function buildFaqs(shippingText: string): { q: string; a: string }[] { return [
   },
   {
     q: "Cum platesc comanda?",
-    a: "Plata se face exclusiv online, in avans, prin transfer bancar. Nu lucram cu plata ramburs. Dupa ce confirmam telefonic comanda, primesti pe email sau WhatsApp datele de plata (IBAN, beneficiar, numarul comenzii), iar coletul pleaca imediat ce plata intra in cont.",
+    a: "Plata se efectueaza online, direct catre Snep. Dupa verificarea comenzii primesti pe WhatsApp sau pe email linkul securizat de plata cu cardul, iar coletul pleaca imediat ce plata este confirmata. Olivox nu incaseaza contravaloarea produselor si nu se plateste nimic la curier.",
   },
   {
     q: "Cat costa transportul?",
-    a: `Costul curierului depinde de valoarea produselor din comanda: ${shippingText}. Suma apare separat in formularul de comanda, inainte sa o trimiti, si este inclusa in totalul de plata.`,
+    a: `Transportul costa ${shippingText}, oriunde in Romania. Suma apare separat in formularul de comanda, inainte sa o trimiti, si este inclusa in totalul de plata.`,
+  },
+  {
+    q: "Cine incaseaza banii pe comanda?",
+    a: "Snep. Plata se face online, cu cardul, prin linkul securizat pe care il primesti pe WhatsApp sau pe email dupa verificarea comenzii. Olivox este distribuitor si nu incaseaza contravaloarea produselor.",
+  },
+  {
+    q: "Cand primesc linkul de plata?",
+    a: "Imediat dupa ce verificam comanda si confirmam produsele, adresa si costul total (produse + transport). Linkul ajunge pe WhatsApp sau pe email, iar coletul pleaca dupa confirmarea platii.",
   },
   {
     q: "Pot returna produsele?",
-    a: "Da. Conform OUG 34/2014 ai 14 zile calendaristice de la primire pentru retragere. Produsele sigilate (suplimente) pot fi returnate doar daca sigiliul nu a fost rupt. Detalii in pagina Livrare si retur.",
+    a: "Da. Ai 14 zile calendaristice de la primire pentru retragere, conform OUG 34/2014 si conditiilor Snep. Cererea se transmite in scris catre Snep, la info@mysnep.com — te ajutam noi sa o intocmesti. Produsele se trimit inapoi in ambalajul original, pe cheltuiala clientului, iar Snep ramburseaza suma in maximum 14 zile, pe cardul folosit la plata. Produsele sigilate (suplimente) pot fi returnate doar daca sigiliul nu a fost rupt. Detalii in pagina Livrare si retur.",
   },
   {
     q: "Produsele Olivox sunt originale?",
@@ -69,7 +77,7 @@ function buildFaqs(shippingText: string): { q: string; a: string }[] { return [
   },
   {
     q: "Pot primi factura pe firma?",
-    a: "Da. Mentioneaza CUI-ul si datele firmei la sectiunea Observatii din formularul de comanda. Iti emitem factura in aceeasi zi.",
+    a: "Da. Mentioneaza CUI-ul si datele firmei la sectiunea Observatii din formularul de comanda si le transmitem odata cu comanda, ca factura sa fie emisa corect pe firma.",
   },
   {
     q: "Cum va contactez rapid?",

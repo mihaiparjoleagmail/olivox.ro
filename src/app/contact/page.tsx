@@ -71,18 +71,18 @@ export default async function ContactPage() {
               <li>Expediem prin curier rapid (Sameday) sau easybox</li>
               <li>Confirmam telefonic fiecare comanda inainte de expediere</li>
               <li>Transport: {describeTiers(config.shippingTiers, config.shippingCost)}</li>
-              <li>Plata: exclusiv online, prin transfer bancar, inainte de expediere (fara ramburs)</li>
+              <li>Plata: online, direct catre Snep, prin link securizat de plata cu cardul (fara ramburs)</li>
             </ul>
           </div>
 
           <div className="contact-info__col">
-            <div className="eyebrow">Firma</div>
+            <div className="eyebrow">Operator site</div>
             <h2>Date de identificare</h2>
             <dl className="contact-info__dl">
               {config.companyName && (<><dt>Nume</dt><dd>{config.companyName}</dd></>)}
-              {config.companyCIF && (<><dt>CUI</dt><dd>{config.companyCIF}</dd></>)}
-              {addressParts.length > 0 && (<><dt>Sediu</dt><dd>{addressParts.join(", ")}</dd></>)}
-              {config.iban && (<><dt>IBAN</dt><dd>{config.iban}</dd></>)}
+              {config.companyCIF && (<><dt>Cod distribuitor</dt><dd>{config.companyCIF}</dd></>)}
+              {addressParts.length > 0 && (<><dt>Localitate</dt><dd>{addressParts.join(", ")}</dd></>)}
+              <dt>Vanzator produse</dt><dd>Snep SpA, Viale Italia nr. 1, 56038 Ponsacco (Pisa), Italia</dd>
             </dl>
           </div>
         </section>

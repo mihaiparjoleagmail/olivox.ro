@@ -19,6 +19,13 @@ export interface SiteConfig {
   shippingTiers: ShippingTier[];
   /** Eticheta afisata clientului pentru linia de transport (ex: "Curier", "Curier Sameday"). */
   shippingLabel: string;
+  /**
+   * Slug-urile produselor din blocul "Cele mai vandute" de pe prima pagina, in
+   * ordinea afisarii. Lista e curata manual — catalogul nu are date de vanzari,
+   * iar sortarea automata dupa id scotea in fata ultimele produse importate
+   * (tricouri, sticle, autocolante).
+   */
+  featuredSlugs: string[];
   gravpointApiUrl?: string;
 
   companyName: string;
@@ -48,14 +55,23 @@ export const DEFAULT_CONFIG: SiteConfig = {
   currency: "RON",
   productPrice: 0,
   productionCost: 0,
-  shippingCost: 30,
-  shippingTiers: [
-    { minValue: 0, cost: 60 },
-    { minValue: 150, cost: 30 },
-  ],
+  // Tarif fix, fara plaje: 60 lei pentru orice comanda.
+  shippingCost: 60,
+  shippingTiers: [],
   shippingLabel: "Curier",
+  featuredSlugs: [
+    "olivox-40-2-sticle-de-1-litru",
+    "burner",
+    "realcomplex",
+    "cafea-moka-cu-ganoderma",
+    "aloe-100-bio",
+    "marine-collagen",
+    "realvita",
+    "omega-3",
+  ],
 
-  companyName: "OLIVOX SRL",
+  // Site personal, nu firma: operatorul e o persoana fizica, distribuitor autorizat Snep.
+  companyName: "Mirela Parjolea — distribuitor autorizat Snep",
   companyCIF: "",
   companyAddress: "",
   companyCounty: "",
@@ -91,6 +107,10 @@ export async function getSiteConfig(): Promise<SiteConfig> {
       merged.shippingCost = Number.isFinite(ship) && ship >= 0 ? ship : DEFAULT_CONFIG.shippingCost;
       merged.shippingLabel = (merged.shippingLabel || "").trim() || DEFAULT_CONFIG.shippingLabel;
       merged.shippingTiers = normalizeTiers(merged.shippingTiers);
+      // Lista curata poate lipsi din DB — atunci ramane cea din cod.
+      merged.featuredSlugs = Array.isArray(merged.featuredSlugs) && merged.featuredSlugs.length > 0
+        ? merged.featuredSlugs.filter((s: unknown) => typeof s === "string" && s.trim() !== "")
+        : DEFAULT_CONFIG.featuredSlugs;
       cachedConfig = merged;
       cacheTime = Date.now();
       return merged;

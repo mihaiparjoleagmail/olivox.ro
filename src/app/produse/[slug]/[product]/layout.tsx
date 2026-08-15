@@ -109,8 +109,8 @@ export default async function ProductLayout({ params, children }: Props) {
         : "https://schema.org/OutOfStock",
       itemCondition: "https://schema.org/NewCondition",
       seller: { "@type": "Organization", name: "olivox.ro" },
-      // Plata se face exclusiv online, in avans (transfer bancar). Fara ramburs.
-      acceptedPaymentMethod: "http://purl.org/goodrelations/v1#ByBankTransferInAdvance",
+      // Plata se face online, cu cardul, direct catre Snep (link securizat). Fara ramburs.
+      acceptedPaymentMethod: "http://purl.org/goodrelations/v1#PaymentMethodCreditCard",
       shippingDetails: {
         "@type": "OfferShippingDetails",
         shippingRate: { "@type": "MonetaryAmount", value: String(shippingCost), currency: "RON" },
@@ -147,7 +147,7 @@ export default async function ProductLayout({ params, children }: Props) {
         acceptedAnswer: {
           "@type": "Answer",
           text:
-            `Livrarea se face prin curier rapid, in 3-5 zile lucratoare de la confirmarea comenzii, in toata Romania. Transport: ${shippingText}, oriunde in Romania. Plata se face exclusiv online, prin transfer bancar, inainte de expediere — nu livram cu plata ramburs.`,
+            `Livrarea se face prin curier rapid, in 3-5 zile lucratoare de la confirmarea comenzii, in toata Romania. Transport: ${shippingText}, oriunde in Romania. Plata se efectueaza online, direct catre Snep: dupa verificarea comenzii primesti pe WhatsApp sau e-mail linkul securizat de plata cu cardul.`,
         },
       },
       {
@@ -156,7 +156,7 @@ export default async function ProductLayout({ params, children }: Props) {
         acceptedAnswer: {
           "@type": "Answer",
           text:
-            "Da, conform legii, ai dreptul sa returnezi produsul in 14 zile de la primire, fara a justifica decizia, atat timp cat produsul este sigilat si in stare originala.",
+            "Da, conform legii ai dreptul sa te retragi in 14 zile de la primire, fara a justifica decizia, atat timp cat produsul este sigilat si in ambalajul original. Cererea se transmite catre Snep, vanzatorul produselor, iar rambursarea se face pe cardul folosit la plata, in maximum 14 zile. Olivox te ajuta cu procedura.",
         },
       },
       {

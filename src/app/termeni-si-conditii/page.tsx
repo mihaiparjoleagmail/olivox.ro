@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function TermeniPage() {
-  const { shippingCost, shippingTiers } = await getSiteConfig();
+  const { shippingCost, shippingTiers, companyCIF, companyLocality, companyCounty, emailOrders } = await getSiteConfig();
   const shippingText = describeTiers(shippingTiers, shippingCost);
 
   return (
@@ -26,11 +26,13 @@ export default async function TermeniPage() {
         <p><strong>Ultima actualizare:</strong> 31 martie 2026</p>
 
         <h2>1. Informatii generale</h2>
-        <p>Site-ul olivox.ro este operat de <strong>HUSE PRINTATE SRL</strong>, CIF 46001845, cu sediul in Sat Văcărești, Str. Principală nr. 104, Teleorman, România.</p>
+        <p>Site-ul olivox.ro este un site personal, operat de <strong>Mirela Parjolea</strong>, persoana fizica, distribuitor autorizat Snep ({companyCIF}), din {companyLocality}, judetul {companyCounty}, Romania. Contact: <a href={`mailto:${emailOrders}`}>{emailOrders}</a>.</p>
+        <p>Site-ul nu este un magazin online operat de o societate comerciala: are rol informativ si de intermediere a comenzilor catre Snep.</p>
         <p>Prin accesarea si utilizarea acestui site, acceptati in totalitate prezentii termeni si conditii.</p>
+        <p>Olivox este <strong>distribuitor autorizat Snep</strong> si <strong>intermediaza vanzarea</strong> produselor din catalogul Snep: ofera consiliere si indrumare, preia si verifica comenzile si asigura suportul pe toata durata acestora. <strong>Vanzatorul produselor este Snep SpA</strong>, Viale Italia nr. 1, 56038 Ponsacco (Pisa), Italia. Contractul de vanzare, incasarea platii si rambursarea in caz de retragere se realizeaza cu Snep.</p>
 
         <h2>2. Produse si servicii</h2>
-        <p>Comercializam produse alimentare premium — ulei de masline extravirgin si suplimente naturale. Pretul afisat pe site include TVA.</p>
+        <p>Intermediem produsele din catalogul Snep — suplimente alimentare, alimente functionale, cosmetice naturale si produse de ingrijire. Pretul afisat pe site include TVA.</p>
 
         <h2>3. Procesul de comanda</h2>
         <p>Pentru a plasa o comanda, clientul trebuie sa:</p>
@@ -43,19 +45,21 @@ export default async function TermeniPage() {
 
         <h2>4. Preturi si plata</h2>
         <p>Pretul produselor este cel afisat pe site la momentul plasarii comenzii.</p>
-        <p>Plata se efectueaza <strong>exclusiv online, in avans, prin transfer bancar</strong>. Nu acceptam plata ramburs (la livrare).</p>
-        <p>Dupa confirmarea telefonica a comenzii, clientul primeste pe email sau WhatsApp datele de plata (beneficiar, IBAN, suma totala si numarul comenzii). Comanda este expediata numai dupa ce plata este inregistrata in contul vanzatorului. Daca plata nu este efectuata in termen de 5 zile lucratoare de la confirmare, comanda poate fi anulata, fara alte obligatii pentru niciuna dintre parti.</p>
+        <p>Plata se efectueaza <strong>online, direct catre Snep</strong>, cu cardul. Olivox nu incaseaza contravaloarea produselor. Nu acceptam plata ramburs (la livrare).</p>
+        <p>Dupa verificarea comenzii, clientul primeste pe WhatsApp sau pe email linkul securizat de plata cu cardul, emis de Snep, pentru suma totala a comenzii (produse + transport). Comanda este expediata numai dupa confirmarea platii. Daca plata nu este efectuata in termen de 5 zile lucratoare de la primirea linkului, comanda poate fi anulata, fara alte obligatii pentru niciuna dintre parti.</p>
 
         <h2>5. Livrare</h2>
         <p>Comenzile sunt procesate in 1-2 zile lucratoare de la confirmarea platii. Livrarea se face prin curier, in 3-5 zile lucratoare, pe teritoriul Romaniei.</p>
-        <p>Costul transportului se stabileste in functie de valoarea produselor comandate: <strong>{shippingText}</strong>. Costul este afisat separat in formularul de comanda, inainte de trimiterea acesteia, si este inclus in totalul de plata.</p>
+        <p>Costul transportului este <strong>{shippingText}</strong>, oriunde in Romania. Costul este afisat separat in formularul de comanda, inainte de trimiterea acesteia, si este inclus in totalul de plata.</p>
 
         <h2>6. Dreptul de retragere</h2>
-        <p>Conform OUG 34/2014, consumatorul beneficiaza de dreptul de retragere in termen de 14 zile de la primirea produsului, cu exceptia situatiilor prevazute la art. 16 (de ex. produse cu termen scurt de expirare desigilate).</p>
-        <p>In cazul in care produsul prezinta defecte, ne obligam sa il inlocuim sau sa rambursam contravaloarea.</p>
+        <p>Conform OUG 34/2014 si conditiilor generale de vanzare Snep, consumatorul beneficiaza de dreptul de retragere in termen de <strong>14 zile calendaristice</strong> de la primirea produsului, fara a fi nevoit sa isi motiveze decizia.</p>
+        <p>Cererea de retragere se comunica in scris catre Snep, la adresa <a href="mailto:info@mysnep.com">info@mysnep.com</a>, in interiorul celor 14 zile. Olivox ofera asistenta la intocmirea si transmiterea cererii. Produsele se returneaza in maximum 14 zile de la comunicarea cererii, la adresa indicata de Snep, in ambalajul original si complete. <strong>Costurile directe ale returului sunt suportate de client</strong>, conform art. 14 din OUG 34/2014.</p>
+        <p>Rambursarea se face de catre Snep, in maximum 14 zile de la primirea produselor returnate, <strong>prin aceeasi metoda de plata</strong> folosita de client la achizitie.</p>
+        <p>Retragerea nu se aplica in situatiile prevazute la art. 16 din OUG 34/2014 — produse sigilate care nu pot fi returnate din motive de igiena sau protectie a sanatatii si al caror sigiliu a fost desfacut, produse personalizate, produse care se pot deteriora sau expira rapid. Retragerea nu se accepta nici daca lipseste ambalajul original, daca produsul este incomplet sau daca a fost deteriorat de client.</p>
 
-        <h2>7. Garantie</h2>
-        <p>Garantam calitatea produselor comercializate. In cazul unor defecte constatate la primire, produsul va fi inlocuit sau rambursat.</p>
+        <h2>7. Garantie si conformitate</h2>
+        <p>Produsele sunt garantate de producator, Snep SpA. Daca produsul prezinta defecte sau neconformitati constatate la primire, ne anunti in cel mai scurt timp si preluam reclamatia catre Snep, in vederea inlocuirii produsului sau a rambursarii contravalorii.</p>
 
         <h2>9. Protectia datelor</h2>
         <p>Datele personale sunt prelucrate conform <a href="/politica-confidentialitate">Politicii de confidentialitate</a> si legislatiei GDPR.</p>

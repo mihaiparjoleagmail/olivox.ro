@@ -34,27 +34,36 @@ interface Product {
   category_slugs: string[] | null;
 }
 
-async function getData() {
+async function getData(featuredSlugs: string[]) {
   const [catsRes, prodsRes] = await Promise.all([
     supabase
       .from("product_categories")
       .select("id, name, slug, image_url, description")
       .order("id", { ascending: true })
       .limit(8),
+    // Lista e curata manual in site_config: catalogul nu are date de vanzari, iar
+    // sortarea dupa id scotea in fata ultimele produse importate (tricouri, sticle).
     supabase
       .from("products")
       .select("id, name, slug, price, r2_image_url, image_url, category_slugs")
-      .order("id", { ascending: false })
-      .limit(8),
+      .in("slug", featuredSlugs),
   ]);
+
+  // Supabase returneaza in ordinea lui, nu in ordinea din lista — reasezam noi.
+  const bySlug = new Map(((prodsRes.data as Product[]) || []).map((p) => [p.slug, p]));
+  const products = featuredSlugs
+    .map((slug) => bySlug.get(slug))
+    .filter((p): p is Product => Boolean(p));
+
   return {
     categories: (catsRes.data as Category[]) || [],
-    products: (prodsRes.data as Product[]) || [],
+    products,
   };
 }
 
 export default async function HomePage() {
-  const [{ categories, products }] = await Promise.all([getData(), getSiteConfig()]);
+  const config = await getSiteConfig();
+  const { categories, products } = await getData(config.featuredSlugs);
 
   return (
     <div className="page-wrapper">
@@ -101,7 +110,7 @@ export default async function HomePage() {
 
       {products.length > 0 && (
         <section className="home-section">
-          <h2 className="home-section__title">Produse recomandate</h2>
+          <h2 className="home-section__title">Cele mai vandute produse Snep</h2>
           <div className="products-grid">
             {products.map((prod, i) => {
               const catSlug = prod.category_slugs?.[0] || "toate";

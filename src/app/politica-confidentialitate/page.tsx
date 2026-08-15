@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Footer from "@/components/Footer";
+import { getSiteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = {
   title: "Politica de Confidentialitate | olivox.ro",
@@ -8,7 +9,12 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function PoliticaPage() {
+// Datele operatorului vin din site_config — reimprospatam periodic.
+export const revalidate = 300;
+
+export default async function PoliticaPage() {
+  const { companyCIF, companyLocality, companyCounty, emailOrders } = await getSiteConfig();
+
   return (
     <div className="page-wrapper">
       <header className="header">
@@ -19,8 +25,9 @@ export default function PoliticaPage() {
         <p><strong>Ultima actualizare:</strong> 31 martie 2026</p>
 
         <h2>1. Operator de date</h2>
-        <p><strong>HUSE PRINTATE SRL</strong>, CIF 46001845, Sat Văcărești, Str. Principală nr. 104, Teleorman, România.</p>
-        <p>Email: <a href="mailto:comenzi@olivox.ro">comenzi@olivox.ro</a></p>
+        <p><strong>Mirela Parjolea</strong>, persoana fizica, distribuitor autorizat Snep ({companyCIF}), din {companyLocality}, judetul {companyCounty}, Romania.</p>
+        <p>olivox.ro este un site personal, nu este operat de o societate comerciala.</p>
+        <p>Email: <a href={`mailto:${emailOrders}`}>{emailOrders}</a></p>
 
         <h2>2. Ce date colectam</h2>
         <p>Colectam urmatoarele date personale necesare procesarii comenzilor:</p>
@@ -33,25 +40,27 @@ export default function PoliticaPage() {
 
         <h2>3. Scopul prelucrarii</h2>
         <ul>
-          <li>Procesarea si livrarea comenzilor</li>
-          <li>Comunicarea cu clientul privind statusul comenzii</li>
+          <li>Verificarea comenzii si transmiterea ei catre Snep SpA, in vederea procesarii, facturarii si livrarii</li>
+          <li>Comunicarea cu clientul privind statusul comenzii si trimiterea linkului de plata</li>
           <li>Trimiterea confirmarii de comanda pe email</li>
-          <li>Indeplinirea obligatiilor legale (facturare, contabilitate)</li>
+          <li>Indeplinirea obligatiilor legale aplicabile</li>
         </ul>
 
         <h2>4. Temeiul legal</h2>
         <p>Prelucrarea se bazeaza pe executarea contractului (plasarea comenzii) conform Art. 6(1)(b) GDPR si pe obligatiile legale conform Art. 6(1)(c) GDPR.</p>
 
         <h2>5. Durata stocarii</h2>
-        <p>Datele personale sunt stocate pe durata necesara indeplinirii scopurilor mentionate, dar nu mai mult de 3 ani de la ultima comanda, cu exceptia datelor necesare conform obligatiilor legale (facturi — 10 ani).</p>
+        <p>Datele personale sunt stocate pe durata necesara indeplinirii scopurilor mentionate, dar nu mai mult de 3 ani de la ultima comanda, cu exceptia datelor pastrate in temeiul unei obligatii legale. Documentele fiscale aferente comenzii sunt pastrate de Snep SpA, in calitate de vanzator, conform propriilor termene legale.</p>
 
         <h2>6. Destinatari</h2>
         <p>Datele pot fi transmise catre:</p>
         <ul>
+          <li><strong>Snep SpA</strong> (Viale Italia nr. 1, 56038 Ponsacco, Pisa, Italia) — vanzatorul produselor, care proceseaza comanda, emite factura, incaseaza plata si expediaza coletul</li>
           <li>Servicii de curierat — pentru livrarea comenzilor</li>
           <li>Servicii de hosting si stocare (Vercel, Supabase, Cloudflare) — pentru functionarea site-ului</li>
           <li>Servicii de email (Resend) — pentru notificari</li>
         </ul>
+        <p>Transferul catre Snep SpA are loc in interiorul Uniunii Europene (Italia), deci nu implica un transfer catre o tara terta.</p>
 
         <h2>7. Drepturile dumneavoastra</h2>
         <p>Conform GDPR, aveti dreptul la:</p>

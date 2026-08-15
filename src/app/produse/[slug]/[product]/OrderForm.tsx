@@ -272,9 +272,9 @@ export default function OrderForm({
         <h3>Multumim pentru comanda!</h3>
         <p>Te contactam in cel mai scurt timp pentru confirmare.</p>
         <p>
-          Plata se face exclusiv online, prin transfer bancar. La confirmare primesti datele de plata
-          (IBAN, beneficiar, numarul comenzii), iar coletul pleaca imediat ce plata intra in cont.
-          Nu se plateste nimic la curier.
+          Plata se efectueaza online, direct catre Snep. Dupa verificarea comenzii primesti pe WhatsApp
+          sau e-mail linkul securizat de plata cu cardul. Olivox nu incaseaza contravaloarea produselor
+          si nu se plateste nimic la curier.
         </p>
       </div>
     );
@@ -386,7 +386,7 @@ export default function OrderForm({
         lineHeight: "1.45",
         textAlign: "center",
       }}>
-        ⚠️ Plata se face exclusiv online, prin transfer bancar — nu livrăm cu plata ramburs. Vă contactăm imediat după plasarea comenzii, iar coletul se expediază după confirmarea plății.
+        ⚠️ Plata se efectuează online, direct către SNEP. După verificarea comenzii, vei primi pe WhatsApp sau e-mail linkul securizat de plată cu cardul. Olivox nu încasează contravaloarea produselor.
       </p>
     </form>
   );
