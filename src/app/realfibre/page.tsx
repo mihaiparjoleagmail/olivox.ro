@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -9,9 +10,20 @@ import { displayPrice, schemaPrice } from "@/lib/price";
 export const revalidate = 900;
 
 const URL = "https://olivox.ro/realfibre";
-const TITLE = "RealFibre Snep: compozitie, administrare, variante si pret";
-const DESCRIPTION =
-  "Ghid complet RealFibre: prebiotic, nu probiotic. Inulina, fibre din mar si FOS in cifre, diferenta dintre pudra, plicuri si comprimate, administrare si cui nu i se potriveste.";
+
+// Vezi nota din app/kalosnep/page.tsx: pretul se compune la randare din cel mai
+// mic pret dintre variante, nu se scrie static, ca sa nu ramana in urma.
+function buildMetadataText(minPrice: number) {
+  const title =
+    minPrice > 0
+      ? `RealFibre: pret de la ${minPrice} lei, compozitie si administrare`
+      : "RealFibre Snep: compozitie, administrare, variante si pret";
+  const description =
+    minPrice > 0
+      ? `RealFibre costa de la ${minPrice} lei. Ghid complet: prebiotic, nu probiotic. Inulina, fibre din mar si FOS in cifre, diferenta dintre pudra, plicuri si comprimate, cui nu i se potriveste.`
+      : "Ghid complet RealFibre: prebiotic, nu probiotic. Inulina, fibre din mar si FOS in cifre, diferenta dintre pudra, plicuri si comprimate, administrare si cui nu i se potriveste.";
+  return { title, description };
+}
 
 const VARIANT_SLUGS = ["realfibre", "realfibre-plicuri", "realfibre-comprimates"];
 
@@ -35,14 +47,14 @@ const VARIANT_NOTES: Record<string, { forma: string; doza: string; zile: number 
   "realfibre-comprimates": { forma: "120 comprimate de 700 mg", doza: "4–8 comprimate pe zi", zile: 20 },
 };
 
-async function getVariants(): Promise<Variant[]> {
+const getVariants = cache(async (): Promise<Variant[]> => {
   const { data } = await supabase
     .from("products")
     .select("name, slug, price, currency, quantity, sku, stock_status, r2_image_url, image_url, category_slugs")
     .in("slug", VARIANT_SLUGS);
   const rows = (data as Variant[]) || [];
   return VARIANT_SLUGS.map((s) => rows.find((r) => r.slug === s)).filter(Boolean) as Variant[];
-}
+});
 
 function hrefFor(v: Variant): string {
   const cat = v.category_slugs?.[0] || "linia-real";
@@ -92,42 +104,52 @@ const FAQ: { q: string; a: string }[] = [
   },
 ];
 
-export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
-  keywords:
-    "realfibre, realfibre snep, realfibre pret, probiotic realfibre, realfibre prospect, realfibre beneficii, realfibre plicuri, realfibre comprimate, inulina, prebiotic",
-  alternates: { canonical: URL },
-  openGraph: {
-    title: TITLE,
-    description: DESCRIPTION,
-    url: URL,
-    siteName: "olivox.ro",
-    type: "article",
-    locale: "ro_RO",
-    images: [
-      {
-        url: "https://media.ghidulfunerar.ro/olivox/products/realfibre.jpg",
-        alt: "RealFibre — supliment alimentar cu fibre prebiotice, Snep",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: TITLE,
-    description: DESCRIPTION,
-    images: ["https://media.ghidulfunerar.ro/olivox/products/realfibre.jpg"],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const variants = await getVariants();
+  const prices = variants.map((v) => displayPrice(v.price)).filter((p) => p > 0);
+  const minPrice = prices.length ? Math.min(...prices) : 0;
+  const { title, description } = buildMetadataText(minPrice);
+
+  return {
+    title,
+    description,
+    keywords:
+      "realfibre, realfibre snep, realfibre pret, probiotic realfibre, realfibre prospect, realfibre beneficii, realfibre plicuri, realfibre comprimate, inulina, prebiotic",
+    alternates: { canonical: URL },
+    openGraph: {
+      title,
+      description,
+      url: URL,
+      siteName: "olivox.ro",
+      type: "article",
+      locale: "ro_RO",
+      images: [
+        {
+          url: "https://media.ghidulfunerar.ro/olivox/products/realfibre.jpg",
+          alt: "RealFibre — supliment alimentar cu fibre prebiotice, Snep",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["https://media.ghidulfunerar.ro/olivox/products/realfibre.jpg"],
+    },
+  };
+}
 
 export default async function RealfibrePillarPage() {
   const variants = await getVariants();
+  const prices = variants.map((v) => displayPrice(v.price)).filter((p) => p > 0);
+  const minPrice = prices.length ? Math.min(...prices) : 0;
+  const { description } = buildMetadataText(minPrice);
 
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: "RealFibre — ghid complet: prebiotic, compozitie, variante si administrare",
-    description: DESCRIPTION,
+    description,
     image: "https://media.ghidulfunerar.ro/olivox/products/realfibre.jpg",
     author: { "@type": "Organization", name: "Olivox", url: "https://olivox.ro" },
     publisher: {

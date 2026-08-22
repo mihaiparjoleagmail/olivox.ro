@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -10,9 +11,22 @@ import { displayPrice, schemaPrice } from "@/lib/price";
 export const revalidate = 900;
 
 const URL = "https://olivox.ro/kalosnep";
-const TITLE = "KaloSnep: compozitie, administrare, variante si pret";
-const DESCRIPTION =
-  "Ghid complet KaloSnep Snep: diferenta dintre plicuri, capsule si Kalogel, compozitia reala (curcuma, berberina, emblica), mod de administrare si contraindicatii.";
+
+// Titlul static nu avea pretul, desi produsele individuale il au (buildProductTitle)
+// si "pret" apare in zeci de cautari reale pe acest query. Se compune la randare
+// din pretul cel mai mic dintre variante, ca sa nu ramana in urma dupa
+// reactualizarea din mysnep — vezi lib/product-title.ts pentru aceeasi decizie.
+function buildMetadataText(minPrice: number) {
+  const title =
+    minPrice > 0
+      ? `KaloSnep: pret de la ${minPrice} lei, compozitie si administrare`
+      : "KaloSnep: compozitie, administrare, variante si pret";
+  const description =
+    minPrice > 0
+      ? `KaloSnep costa de la ${minPrice} lei. Ghid complet: diferenta dintre plicuri, capsule si Kalogel, compozitia reala (curcuma, berberina, emblica), mod de administrare si contraindicatii.`
+      : "Ghid complet KaloSnep Snep: diferenta dintre plicuri, capsule si Kalogel, compozitia reala (curcuma, berberina, emblica), mod de administrare si contraindicatii.";
+  return { title, description };
+}
 
 const VARIANT_SLUGS = ["kalosnep", "kalosnep-capsule", "kalogel", "kalogel-plicuri", "kit-kalo-sprint"];
 
@@ -47,14 +61,14 @@ function costPerDay(price: number, zile: [number, number]): string {
   return min === max ? `${fmt(hi)} RON` : `${fmt(lo)}–${fmt(hi)} RON`;
 }
 
-async function getVariants(): Promise<Variant[]> {
+const getVariants = cache(async (): Promise<Variant[]> => {
   const { data } = await supabase
     .from("products")
     .select("name, slug, price, currency, quantity, sku, stock_status, r2_image_url, image_url, category_slugs")
     .in("slug", VARIANT_SLUGS);
   const rows = (data as Variant[]) || [];
   return VARIANT_SLUGS.map((s) => rows.find((r) => r.slug === s)).filter(Boolean) as Variant[];
-}
+});
 
 function hrefFor(v: Variant): string {
   const cat = v.category_slugs?.[0] || "nevoi-specifice";
@@ -104,42 +118,52 @@ const FAQ: { q: string; a: string }[] = [
   },
 ];
 
-export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
-  keywords:
-    "kalosnep, kalosnep capsule, kalosnep plicuri, kalosnep pret, kalosnep administrare, kalosnep beneficii, kalosnep prospect, kalogel, kalogel plicuri, snep kalosnep",
-  alternates: { canonical: URL },
-  openGraph: {
-    title: TITLE,
-    description: DESCRIPTION,
-    url: URL,
-    siteName: "olivox.ro",
-    type: "article",
-    locale: "ro_RO",
-    images: [
-      {
-        url: "https://media.ghidulfunerar.ro/olivox/products/kalosnep-capsule.jpg",
-        alt: "KaloSnep — supliment alimentar Snep",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: TITLE,
-    description: DESCRIPTION,
-    images: ["https://media.ghidulfunerar.ro/olivox/products/kalosnep-capsule.jpg"],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const variants = await getVariants();
+  const prices = variants.map((v) => displayPrice(v.price)).filter((p) => p > 0);
+  const minPrice = prices.length ? Math.min(...prices) : 0;
+  const { title, description } = buildMetadataText(minPrice);
+
+  return {
+    title,
+    description,
+    keywords:
+      "kalosnep, kalosnep capsule, kalosnep plicuri, kalosnep pret, kalosnep administrare, kalosnep beneficii, kalosnep prospect, kalogel, kalogel plicuri, snep kalosnep",
+    alternates: { canonical: URL },
+    openGraph: {
+      title,
+      description,
+      url: URL,
+      siteName: "olivox.ro",
+      type: "article",
+      locale: "ro_RO",
+      images: [
+        {
+          url: "https://media.ghidulfunerar.ro/olivox/products/kalosnep-capsule.jpg",
+          alt: "KaloSnep — supliment alimentar Snep",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["https://media.ghidulfunerar.ro/olivox/products/kalosnep-capsule.jpg"],
+    },
+  };
+}
 
 export default async function KalosnepPillarPage() {
   const variants = await getVariants();
+  const prices = variants.map((v) => displayPrice(v.price)).filter((p) => p > 0);
+  const minPrice = prices.length ? Math.min(...prices) : 0;
+  const { description } = buildMetadataText(minPrice);
 
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: "KaloSnep — ghid complet: variante, compozitie, administrare si contraindicatii",
-    description: DESCRIPTION,
+    description,
     image: "https://media.ghidulfunerar.ro/olivox/products/kalosnep-capsule.jpg",
     author: { "@type": "Organization", name: "Olivox", url: "https://olivox.ro" },
     publisher: {
