@@ -32,6 +32,11 @@ const PILLARS: { url: string; label: string; desc: string }[] = [
     label: "RealFibre — ghid complet",
     desc: "Fibre prebiotice (inulina, fibre din mar, FOS) — nu probiotic. Diferenta dintre pudra, plicuri si comprimate, ce sa astepti in primele zile.",
   },
+  {
+    url: "/realcomplex",
+    label: "RealComplex — ghid complet",
+    desc: "Papadie, mesteacan si anghinare, plus magneziu, calciu, potasiu, fier bisglicinat si vitaminele C si D. Diferenta dintre plicuri si comprimate, administrare si contraindicatii.",
+  },
 ];
 
 const GUIDES: { url: string; label: string; desc: string }[] = [

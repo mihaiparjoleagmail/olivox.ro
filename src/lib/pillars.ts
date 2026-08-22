@@ -71,6 +71,16 @@ export const PILLARS: Pillar[] = [
     short: "Prebiotic, nu probiotic: pudra, plicuri sau comprimate si ce sa astepti in primele zile.",
     categorySlugs: ["linia-real"],
   },
+  {
+    // `realcomplex`, nu `real` — ca sa nu prinda RealFibre sau RealVita.
+    match: /^realcomplex/i,
+    href: "/realcomplex",
+    title: "Ghid complet RealComplex",
+    blurb:
+      "papadie, mesteacan si anghinare cu minerale si vitaminele C si D, diferenta dintre plicuri si comprimate, administrare si contraindicatii.",
+    short: "Papadie, mesteacan, anghinare si minerale: plicuri sau comprimate, cum se ia si cui nu i se potriveste.",
+    categorySlugs: ["linia-real"],
+  },
 ];
 
 /** Ghidul potrivit unui produs, dupa slug sau nume. */
