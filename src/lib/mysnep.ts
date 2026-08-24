@@ -12,7 +12,12 @@
  * amandoua in acelasi bloc — vezi `parseProductPrices`.
  */
 
-import { Agent } from "undici";
+// Folosim fetch() DIN pachetul undici, nu fetch() global — un `dispatcher`
+// dintr-un undici instalat separat nu are garantie ca e recunoscut de
+// instanta interna de undici din spatele fetch()-ului global al Node (dual
+// package hazard: verificat, cu dispatcher pe fetch global, comportamentul
+// a ramas identic — semn ca era pur si simplu ignorat).
+import { Agent, fetch as undiciFetch } from "undici";
 
 const BASE = "https://www.mysnep.com";
 const UA =
@@ -20,7 +25,7 @@ const UA =
 
 /**
  * fetch() global nu are cum sa opreasca o conexiune blocata la faza de
- * conectare (TCP/TLS) — AbortSignal si Promise.race opresc doar AsTEPTAREA
+ * conectare (TCP/TLS) — AbortSignal si Promise.race opresc doar asteptarea
  * noastra, nu si socket-ul de dedesubt, care ramane deschis. Verificat pe
  * productie: dupa ~40 de cereri sincronizarea se agata mereu in acelasi loc
  * (~15-28s), desi aceeasi cerere, ceruta izolat, raspunde in sub 2s — semn
@@ -343,13 +348,13 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * niciodata. Cu semnalul asta, o pagina blocata pica in cel mult `ms`, se
  * reincearca sau ajunge in "esuate".
  */
-function fetchWithTimeout(url: string, cookies: string, ms = 15000): Promise<Response> {
-  return fetch(url, {
+function fetchWithTimeout(url: string, cookies: string, ms = 15000) {
+  return undiciFetch(url, {
     headers: headersFor(cookies),
     cache: "no-store",
     signal: AbortSignal.timeout(ms),
     dispatcher: mysnepAgent,
-  } as RequestInit);
+  });
 }
 
 /**
@@ -481,14 +486,14 @@ export async function fetchSupplierPrice(
 ): Promise<SupplierPriceResult> {
   const url = sourceUrl.startsWith("http") ? sourceUrl : `${BASE}/${sourceUrl.replace(/^\//, "")}`;
   const timeoutSignal = AbortSignal.timeout(15000);
-  let res: Response;
+  let res: Awaited<ReturnType<typeof undiciFetch>>;
   try {
-    res = await fetch(url, {
+    res = await undiciFetch(url, {
       headers: headersFor(cookies),
       cache: "no-store",
       signal: signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal,
       dispatcher: mysnepAgent,
-    } as RequestInit);
+    });
   } catch {
     return { ok: false, price: null, currency: "RON", candidates: [], reason: "network" };
   }
