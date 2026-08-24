@@ -221,6 +221,12 @@ function headersFor(cookies: string): Record<string, string> {
   return {
     "User-Agent": UA,
     "Accept-Language": "ro-RO,ro;q=0.9,it;q=0.8",
+    // mysnep raspunde cu "Keep-Alive: timeout=4, max=150" — o conexiune
+    // reutilizata care sta peste 4s intre cereri (posibil in mediul Vercel,
+    // nu s-a reprodus local) ramane agatata pe partea clientului cand
+    // serverul a inchis-o deja pe tacute. Cerem conexiune noua de fiecare
+    // data — mai lent cu o strangere de mana TCP/TLS, dar sigur.
+    Connection: "close",
     ...(cookies ? { Cookie: cookies } : {}),
   };
 }
@@ -454,11 +460,7 @@ export async function fetchSupplierPrice(
   let res: Response;
   try {
     res = await fetch(url, {
-      headers: {
-        "User-Agent": UA,
-        "Accept-Language": "ro-RO,ro;q=0.9,it;q=0.8",
-        ...(cookies ? { Cookie: cookies } : {}),
-      },
+      headers: headersFor(cookies),
       cache: "no-store",
       signal: signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal,
     });
