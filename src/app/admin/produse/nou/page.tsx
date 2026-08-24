@@ -181,11 +181,11 @@ export default function NewProductPage() {
             </div>
             <div className="admin-edit-field">
               <label>Descriere scurta</label>
-              <ReactQuill theme="snow" value={shortDescription} onChange={setShortDescription} modules={quillModules} />
+              <ReactQuill theme="snow" defaultValue={shortDescription} onChange={setShortDescription} modules={quillModules} />
             </div>
             <div className="admin-edit-field" style={{ marginTop: 12 }}>
               <label>Descriere completa</label>
-              <ReactQuill theme="snow" value={description} onChange={setDescription} modules={quillModules} />
+              <ReactQuill theme="snow" defaultValue={description} onChange={setDescription} modules={quillModules} />
             </div>
           </div>
 

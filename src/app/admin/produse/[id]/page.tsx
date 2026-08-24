@@ -231,12 +231,12 @@ export default function EditProductPage() {
 
             <div className="admin-edit-field">
               <label>Descriere scurta</label>
-              <ReactQuill theme="snow" value={prod.short_description || ""} onChange={(val: string) => setProd({ ...prod, short_description: val })} modules={quillModules} />
+              <ReactQuill theme="snow" defaultValue={prod.short_description || ""} onChange={(val: string) => setProd((p) => p && { ...p, short_description: val })} modules={quillModules} />
             </div>
 
             <div className="admin-edit-field" style={{ marginTop: 12 }}>
               <label>Descriere completa</label>
-              <ReactQuill theme="snow" value={prod.description || ""} onChange={(val: string) => setProd({ ...prod, description: val })} modules={quillModules} />
+              <ReactQuill theme="snow" defaultValue={prod.description || ""} onChange={(val: string) => setProd((p) => p && { ...p, description: val })} modules={quillModules} />
             </div>
           </div>
 
