@@ -152,6 +152,12 @@ export async function POST(request: Request) {
         try { controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n")); } catch {}
       };
 
+      // Vercel taie conexiunea intre edge si functie daca nu trimitem nimic
+      // o vreme (functia ruleaza in iad1, mysnep e in Italia — un singur
+      // fetch mai lent decat pragul de inactivitate era destul sa opreasca
+      // streamul la mijloc, fara eroare, chiar daca functia continua sa lucreze).
+      const heartbeat = setInterval(() => send({ type: "heartbeat" }), 5000);
+
       try {
         send({ type: "start", label: "Se citeste catalogul furnizorului..." });
 
@@ -338,6 +344,7 @@ export async function POST(request: Request) {
       } catch (e) {
         send({ type: "error", error: e instanceof Error ? e.message : String(e) });
       } finally {
+        clearInterval(heartbeat);
         controller.close();
       }
     },

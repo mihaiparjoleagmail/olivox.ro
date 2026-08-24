@@ -108,6 +108,10 @@ export async function POST(request: Request) {
 
       send({ type: "start", total });
 
+      // Vezi nota din /api/admin/sync: fara un heartbeat, un import lent
+      // (pagina + imagine + PDF pe R2) poate opri conexiunea la mijloc.
+      const heartbeat = setInterval(() => send({ type: "heartbeat" }), 5000);
+
       try {
         for (const c of prices) {
           const id = Number(c?.id);
@@ -172,6 +176,7 @@ export async function POST(request: Request) {
       } catch (e) {
         send({ type: "error", error: e instanceof Error ? e.message : String(e) });
       } finally {
+        clearInterval(heartbeat);
         controller.close();
       }
     },
