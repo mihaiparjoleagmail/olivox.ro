@@ -211,7 +211,7 @@ export interface SupplierProduct {
 
 /** Categoriile din meniul de pe prima pagina. */
 export async function fetchCategoryUrls(cookies: string): Promise<string[]> {
-  const html = await fetch(`${BASE}/`, { headers: headersFor(cookies), cache: "no-store" }).then((r) => r.text());
+  const html = await fetchWithTimeout(`${BASE}/`, cookies).then((r) => r.text());
   const raw = html.match(/href="([^"]*-AC\d+\.html)"/g) || [];
   // Link-urile apar si ca "../../x-AC4.html" — pastram doar numele fisierului.
   return [...new Set(raw.map((s) => s.slice(6, -1).replace(/^.*\//, "")))];
@@ -312,14 +312,24 @@ const PER_PAGE = 24;
 /** Pauza scurta intre cereri: mysnep intoarce pagini trunchiate cand e batut prea des. */
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * fetch() simplu n-are timeout implicit — daca mysnep accepta conexiunea si
+ * nu mai raspunde nimic (s-a intamplat sub sesiuni batute des), cererea ramane
+ * agatata si scanarea nu se mai termina niciodata. Cu semnalul asta, o pagina
+ * blocata pica in cel mult `ms`, se reincearca sau ajunge in "esuate".
+ */
+function fetchWithTimeout(url: string, cookies: string, ms = 15000): Promise<Response> {
+  return fetch(url, { headers: headersFor(cookies), cache: "no-store", signal: AbortSignal.timeout(ms) });
+}
+
 /** O pagina, cu cateva reincercari. O cerere picata inseamna produse "disparute". */
 async function fetchListing(url: string, cookies: string): Promise<string | null> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const r = await fetch(url, { headers: headersFor(cookies), cache: "no-store" });
+      const r = await fetchWithTimeout(url, cookies);
       if (r.ok) return await r.text();
     } catch {
-      /* reincercam */
+      /* reincercam — timeout sau eroare de retea */
     }
     await sleep(400 * (attempt + 1));
   }
@@ -423,6 +433,7 @@ export async function fetchSupplierPrice(
   signal?: AbortSignal
 ): Promise<SupplierPriceResult> {
   const url = sourceUrl.startsWith("http") ? sourceUrl : `${BASE}/${sourceUrl.replace(/^\//, "")}`;
+  const timeoutSignal = AbortSignal.timeout(15000);
   let res: Response;
   try {
     res = await fetch(url, {
@@ -432,7 +443,7 @@ export async function fetchSupplierPrice(
         ...(cookies ? { Cookie: cookies } : {}),
       },
       cache: "no-store",
-      signal,
+      signal: signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal,
     });
   } catch {
     return { ok: false, price: null, currency: "RON", candidates: [], reason: "network" };
@@ -553,7 +564,7 @@ export async function fetchProductDetails(
   const url = sourceUrl.startsWith("http") ? sourceUrl : `${BASE}/${sourceUrl.replace(/^\//, "")}`;
   let html: string;
   try {
-    const res = await fetch(url, { headers: headersFor(cookies), cache: "no-store" });
+    const res = await fetchWithTimeout(url, cookies);
     if (!res.ok) return { ok: false, reason: `http_${res.status}` };
     html = await res.text();
   } catch {
