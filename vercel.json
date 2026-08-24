@@ -1,2 +1,12 @@
 {
+  "functions": {
+    "src/app/api/admin/sync/route.ts": {
+      "memory": 3009,
+      "maxDuration": 300
+    },
+    "src/app/api/admin/sync/apply/route.ts": {
+      "memory": 3009,
+      "maxDuration": 300
+    }
+  }
 }
