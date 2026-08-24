@@ -110,6 +110,17 @@ function buildCategoryMap(
   return map;
 }
 
+/**
+ * Codul nostru e "40" + linia + numarul articolului (ex: 4000371, 4072206).
+ * Pe unele categorii mysnep afiseaza doar partea de dupa "40" in listare.
+ * Nu atingem codurile care nu urmeaza tiparul (deja scurte, gen 90050).
+ */
+function stripLinePrefix(sku: string): string | null {
+  const base = sku.replace(/[A-Za-z]+$/, "");
+  if (!/^\d+$/.test(base)) return null;
+  return base.length > 5 && base.startsWith("40") ? base.slice(2) : null;
+}
+
 function slugify(s: string): string {
   return s
     .toLowerCase()
@@ -194,8 +205,20 @@ export async function POST(request: Request) {
           if (!p.sku) return null;
           // Cod exact, dar doar cand la furnizor codul e al unui singur produs —
           // altfel am lega un produs de-al nostru de o marime aleatoare.
-          const exact = supplierBySku.get(String(p.sku));
+          const sku = String(p.sku);
+          const exact = supplierBySku.get(sku);
           if (exact && exact.length === 1) return exact[0];
+          // Pe multe categorii (aloe, uleiuri esentiale, ingrijire corp...) mysnep
+          // afiseaza in listare codul fara prefixul nostru de linie "40"
+          // (Cod: 00371 in loc de 4000371) — verificat manual pe pagina de produs
+          // ("Codice prodotto : 00371"). Numele nici nu ajuta acolo, fiindca sunt
+          // linii netraduse in romana pe mysnep. Incercam si varianta scurtata,
+          // tot doar cand e unica la furnizor.
+          const short = stripLinePrefix(sku);
+          if (short) {
+            const shortMatch = supplierBySku.get(short);
+            if (shortMatch && shortMatch.length === 1) return shortMatch[0];
+          }
           return null;
         };
 
@@ -203,7 +226,7 @@ export async function POST(request: Request) {
         const categoryMap = buildCategoryMap(ours, matchOurs);
 
         const priceChanges: Array<{
-          id: number; name: string; sku: string;
+          id: number; name: string; sku: string; url: string; slug: string; category: string;
           oldDisplay: number; newDisplay: number; newPrice: number;
         }> = [];
         const newProducts: Array<{
@@ -212,14 +235,14 @@ export async function POST(request: Request) {
         }> = [];
         const missingProducts: Array<{
           id: number; name: string; sku: string | null; price: number | null;
-          alreadyOut: boolean; renamedTo?: string | null;
+          alreadyOut: boolean; renamedTo?: string | null; renamedUrl?: string | null;
           // slug + categoria, ca pagina sa poata face link catre produsul de pe site
           slug: string; category: string;
         }> = [];
         // Stocul nu se sincroniza deloc: produse aduse in aprilie ramaneau
         // "indisponibil" desi furnizorul le are pe stoc.
         const stockChanges: Array<{
-          id: number; name: string; sku: string;
+          id: number; name: string; sku: string; url: string; slug: string; category: string;
           from: string; to: string;
         }> = [];
         let unchanged = 0;
@@ -228,12 +251,14 @@ export async function POST(request: Request) {
           const sup = matchOurs(p);
           if (!sup) continue;
           matchedSupplier.add(`${sup.sku}::${normalizeName(sup.name)}`);
+          const slug = p.slug;
+          const category = (p.category_slugs || [])[0] || "";
 
           if (sup.available !== null) {
             const want = sup.available ? "in_stock" : "out_of_stock";
             const have = p.stock_status === "out_of_stock" ? "out_of_stock" : "in_stock";
             if (want !== have) {
-              stockChanges.push({ id: p.id, name: p.name, sku: String(p.sku || sup.sku), from: have, to: want });
+              stockChanges.push({ id: p.id, name: p.name, sku: String(p.sku || sup.sku), url: sup.url, slug, category, from: have, to: want });
             }
           }
 
@@ -241,7 +266,7 @@ export async function POST(request: Request) {
           const oldDisplay = displayPrice(p.price);
           const newDisplay = displayPrice(sup.price);
           if (newDisplay !== oldDisplay) {
-            priceChanges.push({ id: p.id, name: p.name, sku: String(p.sku || sup.sku), oldDisplay, newDisplay, newPrice: sup.price });
+            priceChanges.push({ id: p.id, name: p.name, sku: String(p.sku || sup.sku), url: sup.url, slug, category, oldDisplay, newDisplay, newPrice: sup.price });
           } else {
             unchanged++;
           }
@@ -275,14 +300,15 @@ export async function POST(request: Request) {
           if (partial) break;
           if (matchOurs(p)) continue;
           const base = baseCode(String(p.sku));
-          const renamedTo = base !== String(p.sku) && newBySku.has(base) ? base : null;
+          const renamed = base !== String(p.sku) ? newBySku.get(base) : undefined;
           missingProducts.push({
             id: p.id,
             name: p.name,
             sku: p.sku,
             price: p.price,
             alreadyOut: p.stock_status === "out_of_stock",
-            renamedTo,
+            renamedTo: renamed ? renamed.sku : null,
+            renamedUrl: renamed ? renamed.url : null,
             slug: p.slug,
             category: (p.category_slugs || [])[0] || "",
           });

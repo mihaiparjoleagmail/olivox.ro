@@ -11,10 +11,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getAdminAuth } from "@/lib/admin-auth";
 
-interface PriceChange { id: number; name: string; sku: string; oldDisplay: number; newDisplay: number; newPrice: number }
-interface StockChange { id: number; name: string; sku: string; from: string; to: string }
+interface PriceChange { id: number; name: string; sku: string; url?: string; slug?: string; category?: string; oldDisplay: number; newDisplay: number; newPrice: number }
+interface StockChange { id: number; name: string; sku: string; url?: string; slug?: string; category?: string; from: string; to: string }
 interface NewProduct { sku: string; name: string; url: string; price: number | null; slug: string; category: string; available: boolean }
-interface MissingProduct { id: number; name: string; sku: string | null; slug?: string; category?: string; price: number | null; alreadyOut: boolean; renamedTo?: string | null }
+interface MissingProduct { id: number; name: string; sku: string | null; slug?: string; category?: string; price: number | null; alreadyOut: boolean; renamedTo?: string | null; renamedUrl?: string | null }
 interface ScanResult {
   scannedAt: string;
   /** true = vreo pagina de listare n-a raspuns, deci catalogul citit e incomplet. */
@@ -37,6 +37,44 @@ const REASONS: Record<string, string> = {
   http_error: "pagina inaccesibila",
   network: "eroare de retea",
 };
+
+/** Numele produsului: link catre pagina lui pe olivox.ro, daca stim slug + categorie. */
+function ProductNameLink({ name, slug, category }: { name: string; slug?: string; category?: string }) {
+  if (!slug || !category) return <>{name}</>;
+  return (
+    <a href={`/produse/${category}/${slug}`} target="_blank" rel="noopener"
+      onClick={(e) => e.stopPropagation()} title="Deschide pe site-ul nostru">
+      {name}
+    </a>
+  );
+}
+
+/** Codul produsului: link catre pagina de la furnizor (mysnep) + buton de copiere. */
+function SkuChip({ sku, url }: { sku: string; url?: string | null }) {
+  const [copied, setCopied] = useState(false);
+  const copy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard?.writeText(sku).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    }).catch(() => {});
+  };
+  return (
+    <span className="price-sync__sku">
+      {url ? (
+        <a href={url} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} title="Deschide la furnizor">{sku}</a>
+      ) : (
+        <span>{sku}</span>
+      )}
+      <button type="button" className="price-sync__copy" onClick={copy} title="Copiaza codul" aria-label="Copiaza codul">
+        {copied
+          ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="20 6 9 17 4 12" /></svg>
+          : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>}
+      </button>
+    </span>
+  );
+}
 
 export default function SincronizarePage() {
   const [auth, setAuth] = useState("");
@@ -267,7 +305,10 @@ export default function SincronizarePage() {
                   {scan.priceChanges.map((c) => (
                     <label key={c.id} className="price-sync__row">
                       <input type="checkbox" checked={pickPrices.has(c.id)} onChange={() => setPickPrices(toggle(pickPrices, c.id))} />
-                      <span className="price-sync__name">{c.name} &middot; {c.sku}</span>
+                      <span className="price-sync__name">
+                        <ProductNameLink name={c.name} slug={c.slug} category={c.category} />
+                        {" "}<SkuChip sku={c.sku} url={c.url} />
+                      </span>
                       <span className="price-sync__old">{c.oldDisplay}</span>
                       <span className="price-sync__arrow">&rarr;</span>
                       <span className={`price-sync__new ${c.newDisplay > c.oldDisplay ? "is-up" : "is-down"}`}>{c.newDisplay} RON</span>
@@ -292,7 +333,10 @@ export default function SincronizarePage() {
                   {scan.stockChanges.map((c) => (
                     <label key={c.id} className="price-sync__row">
                       <input type="checkbox" checked={pickStock.has(c.id)} onChange={() => setPickStock(toggle(pickStock, c.id))} />
-                      <span className="price-sync__name">{c.name} &middot; {c.sku}</span>
+                      <span className="price-sync__name">
+                        <ProductNameLink name={c.name} slug={c.slug} category={c.category} />
+                        {" "}<SkuChip sku={c.sku} url={c.url} />
+                      </span>
                       <span className="price-sync__old">{c.from === "out_of_stock" ? "indisponibil" : "in stoc"}</span>
                       <span className="price-sync__arrow">&rarr;</span>
                       <span className={`price-sync__new ${c.to === "in_stock" ? "is-down" : "is-up"}`}>
@@ -311,7 +355,7 @@ export default function SincronizarePage() {
                 <p className="price-sync__lead">
                   La import se preiau de pe mysnep descrierea, ingredientele, modul de utilizare, avertismentele,
                   certificarile, cantitatea si punctele; imaginea si fisa PDF se urca pe R2, iar meta se completeaza
-                  din sablon. Numele deschide pagina produsului la furnizor.
+                  din sablon. Codul deschide pagina produsului la furnizor.
                 </p>
                 <button className="price-sync__all" onClick={() => setPickNew(pickNew.size === scan.newProducts.length ? new Set() : new Set(scan.newProducts.map((n) => n.sku)))}>
                   {pickNew.size === scan.newProducts.length ? "Deselecteaza tot" : "Selecteaza tot"}
@@ -321,7 +365,8 @@ export default function SincronizarePage() {
                     <label key={n.sku} className="price-sync__row">
                       <input type="checkbox" checked={pickNew.has(n.sku)} onChange={() => setPickNew(toggleStr(pickNew, n.sku))} />
                       <span className="price-sync__name">
-                        <a href={n.url} target="_blank" rel="noopener" title="Deschide la furnizor">{n.name}</a> &middot; {n.sku}
+                        {n.name}
+                        {" "}<SkuChip sku={n.sku} url={n.url} />
                       </span>
                       <span className="price-sync__cat">{n.category || "fara categorie"}</span>
                       <span className="price-sync__new">{n.price != null ? `${Math.ceil(n.price)} RON` : "—"}</span>
@@ -358,10 +403,8 @@ export default function SincronizarePage() {
                     <label key={m.id} className="price-sync__row">
                       <input type="checkbox" checked={pickMissing.has(m.id)} onChange={() => setPickMissing(toggle(pickMissing, m.id))} />
                       <span className="price-sync__name">
-                        {m.slug && m.category
-                          ? <a href={`/produse/${m.category}/${m.slug}`} target="_blank" rel="noopener" title="Deschide pe site-ul nostru">{m.name}</a>
-                          : m.name}
-                        {" "}&middot; {m.sku}
+                        <ProductNameLink name={m.name} slug={m.slug} category={m.category} />
+                        {m.sku && <>{" "}<SkuChip sku={m.sku} url={m.renamedUrl} /></>}
                       </span>
                       <span className="price-sync__cat">
                         {m.renamedTo ? `probabil redenumit in ${m.renamedTo}` : m.alreadyOut ? "deja indisponibil" : ""}

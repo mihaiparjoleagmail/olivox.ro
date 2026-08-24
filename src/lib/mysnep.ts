@@ -134,6 +134,17 @@ function firstAmount(fragment: string): { value: number; currency: string } | nu
 }
 
 /**
+ * Unele produse (parfumurile "inspirate", verificat pe profumi-ispirati) nu au
+ * pret RON configurat pe mysnep si pagina afiseaza cifra in EUR — fara sa
+ * schimbe eticheta. Fara filtrul asta, cifra in EUR ajungea scrisa direct ca
+ * RON (ex: "EUR 25,71" citit ca "26 RON" in loc de pretul real, ~131 RON).
+ * Mai bine "pret negasit" decat un pret gresit de 5x.
+ */
+function ronOnly(amt: { value: number; currency: string } | null): number | null {
+  return amt && amt.currency === "RON" ? amt.value : null;
+}
+
+/**
  * Citeste preturile din blocul #prod_price. Doua forme, ambele intalnite:
  *
  *   cu discount:  <strong id="totale_articolo_scontato">RON 182,73</strong>
@@ -157,9 +168,9 @@ export function parseProductPrices(html: string): ProductPrices {
   const distributor = struck ? anyAmount : null;
 
   return {
-    endUser: endUser?.value ?? null,
-    distributor: distributor?.value ?? null,
-    currency: endUser?.currency || "RON",
+    endUser: ronOnly(endUser),
+    distributor: ronOnly(distributor),
+    currency: "RON",
   };
 }
 
@@ -275,8 +286,8 @@ export function parseListingPage(html: string, category: string): SupplierProduc
     // Fara <strike> produsul nu are discount: singurul pret afisat e cel de catalog.
     const wFooter = card.split('class="w-footer"')[1] || card;
     const anyAmount = firstAmount(wFooter.slice(0, 600));
-    const price = struck?.value ?? anyAmount?.value ?? null;
-    const distributorPrice = struck ? firstAmount(wFooter.split("</strike>")[1] || "")?.value ?? null : null;
+    const price = ronOnly(struck) ?? ronOnly(anyAmount);
+    const distributorPrice = struck ? ronOnly(firstAmount(wFooter.split("</strike>")[1] || "")) : null;
 
     out.push({
       sku,

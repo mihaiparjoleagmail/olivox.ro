@@ -2601,6 +2601,28 @@
 .price-sync__row input[type="checkbox"] { margin: 0; cursor: pointer; }
 .price-sync__cat { font-size: 0.7rem; color: var(--color-text-muted); white-space: nowrap; }
 .price-sync__name a { color: var(--color-primary); }
+.price-sync__sku {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+.price-sync__sku a { color: var(--color-text-muted); text-decoration: underline; }
+.price-sync__copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+}
+.price-sync__copy:hover { color: var(--color-accent); background: var(--color-bg); }
 .price-sync__mode {
   display: flex;
   flex-direction: column;
