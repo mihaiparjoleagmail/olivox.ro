@@ -90,8 +90,11 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Match everything except Next.js internals and static files
+  // Match everything except Next.js internals, API routes and static files.
+  // /api nu are nevoie de redirect-urile de mai sus, iar trecerea prin edge
+  // middleware bufereaza raspunsul — ruta de sincronizare (NDJSON, streaming)
+  // ramanea agatata la mijloc din cauza asta, nu din cauza furnizorului.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|api|.*\\..*).*)",
   ],
 };
