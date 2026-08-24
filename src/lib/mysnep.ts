@@ -27,18 +27,22 @@ const UA =
  * fetch() global nu are cum sa opreasca o conexiune blocata la faza de
  * conectare (TCP/TLS) — AbortSignal si Promise.race opresc doar asteptarea
  * noastra, nu si socket-ul de dedesubt, care ramane deschis. Verificat pe
- * productie: dupa ~40 de cereri sincronizarea se agata mereu in acelasi loc
- * (~15-28s), desi aceeasi cerere, ceruta izolat, raspunde in sub 2s — semn
- * ca socket-uri blocate se acumuleaza pana epuizeaza agentul implicit.
- * Cu un Agent propriu si connect timeout strict, o conectare blocata e
- * distrusa efectiv de Node, nu doar abandonata la nivel de JS.
+ * productie: un Agent la nivel de MODUL (creat o singura data) tot se agata
+ * dupa ~40 de cereri cumulate — semn ca Vercel reutilizeaza containerul
+ * "cald" intre cereri apropiate, deci Agentul si pool-ul lui de conexiuni
+ * supravietuiesc intre ce credeam ca sunt executii separate. De-aia se
+ * construieste un Agent NOU la fiecare apel de nivel varf (fetchSupplierCatalog
+ * etc.), inchis explicit la final — nu se mai poate acumula nimic intre
+ * cereri HTTP diferite, indiferent daca containerul e reutilizat sau nu.
  */
-const mysnepAgent = new Agent({
-  connect: { timeout: 6000 },
-  headersTimeout: 12000,
-  bodyTimeout: 12000,
-  keepAliveTimeout: 3000,
-});
+function createAgent(): Agent {
+  return new Agent({
+    connect: { timeout: 6000 },
+    headersTimeout: 12000,
+    bodyTimeout: 12000,
+    keepAliveTimeout: 3000,
+  });
+}
 
 export interface PriceCandidate {
   /** Eticheta din stanga cifrei, exact cum apare in pagina. */
@@ -235,10 +239,15 @@ export interface SupplierProduct {
 
 /** Categoriile din meniul de pe prima pagina. */
 export async function fetchCategoryUrls(cookies: string): Promise<string[]> {
-  const html = await fetchWithTimeout(`${BASE}/`, cookies).then((r) => r.text());
-  const raw = html.match(/href="([^"]*-AC\d+\.html)"/g) || [];
-  // Link-urile apar si ca "../../x-AC4.html" — pastram doar numele fisierului.
-  return [...new Set(raw.map((s) => s.slice(6, -1).replace(/^.*\//, "")))];
+  const agent = createAgent();
+  try {
+    const html = await fetchWithTimeout(`${BASE}/`, cookies, agent).then((r) => r.text());
+    const raw = html.match(/href="([^"]*-AC\d+\.html)"/g) || [];
+    // Link-urile apar si ca "../../x-AC4.html" — pastram doar numele fisierului.
+    return [...new Set(raw.map((s) => s.slice(6, -1).replace(/^.*\//, "")))];
+  } finally {
+    await agent.close();
+  }
 }
 
 function headersFor(cookies: string): Record<string, string> {
@@ -348,12 +357,12 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * niciodata. Cu semnalul asta, o pagina blocata pica in cel mult `ms`, se
  * reincearca sau ajunge in "esuate".
  */
-function fetchWithTimeout(url: string, cookies: string, ms = 15000) {
+function fetchWithTimeout(url: string, cookies: string, agent: Agent, ms = 15000) {
   return undiciFetch(url, {
     headers: headersFor(cookies),
     cache: "no-store",
     signal: AbortSignal.timeout(ms),
-    dispatcher: mysnepAgent,
+    dispatcher: agent,
   });
 }
 
@@ -375,10 +384,10 @@ function raceTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 /** O pagina, cu cateva reincercari. O cerere picata inseamna produse "disparute". */
-async function fetchListing(url: string, cookies: string): Promise<string | null> {
+async function fetchListing(url: string, cookies: string, agent: Agent): Promise<string | null> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const r = await raceTimeout(fetchWithTimeout(url, cookies), 12000);
+      const r = await raceTimeout(fetchWithTimeout(url, cookies, agent), 12000);
       if (r.ok) return await raceTimeout(r.text(), 8000);
     } catch {
       /* reincercam — timeout sau eroare de retea */
@@ -395,6 +404,7 @@ async function fetchListing(url: string, cookies: string): Promise<string | null
 async function crawlCategory(
   cat: string,
   cookies: string,
+  agent: Agent,
   onPage?: (page: number) => void
 ): Promise<{ items: SupplierProduct[]; declared: number; loggedOut: boolean }> {
   // Cheia include numele: la textilele EaseLine toate marimile au acelasi cod
@@ -406,7 +416,7 @@ async function crawlCategory(
 
   for (let page = 1; page <= 30; page++) {
     const url = `${BASE}/${cat}${page > 1 ? `?pag=${page}` : ""}`;
-    const html = await fetchListing(url, cookies);
+    const html = await fetchListing(url, cookies, agent);
     if (html === null) break;
     onPage?.(page);
 
@@ -449,32 +459,37 @@ export async function fetchSupplierCatalog(
   let pagesDone = 0;
   let sawPrice = false;
   let sawLogin = false;
+  const agent = createAgent();
 
-  for (const cat of categories) {
-    // mysnep raspunde uneori cu listari trunchiate. Comparam cu numarul pe care
-    // il declara chiar el si reincercam categoria daca am citit mai putin —
-    // altfel produsele necitite ar aparea drept "disparute de la furnizor".
-    let best: SupplierProduct[] = [];
-    let declared = 0;
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const r = await crawlCategory(cat, cookies, () => {
-        pagesDone++;
-        onProgress?.(pagesDone, 0, `${cat}`);
-      });
-      if (r.loggedOut) sawLogin = true;
-      declared = r.declared;
-      if (r.items.length > best.length) best = r.items;
-      if (declared === 0 || best.length >= declared) break;
-    }
+  try {
+    for (const cat of categories) {
+      // mysnep raspunde uneori cu listari trunchiate. Comparam cu numarul pe care
+      // il declara chiar el si reincercam categoria daca am citit mai putin —
+      // altfel produsele necitite ar aparea drept "disparute de la furnizor".
+      let best: SupplierProduct[] = [];
+      let declared = 0;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const r = await crawlCategory(cat, cookies, agent, () => {
+          pagesDone++;
+          onProgress?.(pagesDone, 0, `${cat}`);
+        });
+        if (r.loggedOut) sawLogin = true;
+        declared = r.declared;
+        if (r.items.length > best.length) best = r.items;
+        if (declared === 0 || best.length >= declared) break;
+      }
 
-    if (declared > 0 && best.length < declared) {
-      failures.push(`${cat}: ${best.length}/${declared}`);
+      if (declared > 0 && best.length < declared) {
+        failures.push(`${cat}: ${best.length}/${declared}`);
+      }
+      for (const p of best) {
+        if (p.price != null) sawPrice = true;
+        const key = `${p.sku}::${normalizeName(p.name)}`;
+        if (!products.has(key)) products.set(key, p);
+      }
     }
-    for (const p of best) {
-      if (p.price != null) sawPrice = true;
-      const key = `${p.sku}::${normalizeName(p.name)}`;
-      if (!products.has(key)) products.set(key, p);
-    }
+  } finally {
+    await agent.close();
   }
 
   return { products, expired: sawLogin && !sawPrice, partial: failures.length > 0, failures };
@@ -496,46 +511,51 @@ export async function fetchSupplierPrice(
 ): Promise<SupplierPriceResult> {
   const url = sourceUrl.startsWith("http") ? sourceUrl : `${BASE}/${sourceUrl.replace(/^\//, "")}`;
   const timeoutSignal = AbortSignal.timeout(15000);
-  let res: Awaited<ReturnType<typeof undiciFetch>>;
+  const agent = createAgent();
   try {
-    res = await undiciFetch(url, {
-      headers: headersFor(cookies),
-      cache: "no-store",
-      signal: signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal,
-      dispatcher: mysnepAgent,
-    });
-  } catch {
-    return { ok: false, price: null, currency: "RON", candidates: [], reason: "network" };
-  }
+    let res: Awaited<ReturnType<typeof undiciFetch>>;
+    try {
+      res = await undiciFetch(url, {
+        headers: headersFor(cookies),
+        cache: "no-store",
+        signal: signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal,
+        dispatcher: agent,
+      });
+    } catch {
+      return { ok: false, price: null, currency: "RON", candidates: [], reason: "network" };
+    }
 
-  if (!res.ok) {
-    return { ok: false, price: null, currency: "RON", candidates: [], reason: "http_error", status: res.status };
-  }
+    if (!res.ok) {
+      return { ok: false, price: null, currency: "RON", candidates: [], reason: "http_error", status: res.status };
+    }
 
-  const html = await res.text();
-  const parsed = parseProductPrices(html);
-  const candidates = extractPriceCandidates(html);
+    const html = await res.text();
+    const parsed = parseProductPrices(html);
+    const candidates = extractPriceCandidates(html);
 
-  if (parsed.endUser == null) {
-    // Fara sesiune valida pagina nu contine niciun pret, dar contine butonul de
-    // login — asa deosebim "cookie expirat" de "produs fara pret".
-    const loggedOut = /REGISTRAZIONE|REGISTRARE|\bLOGIN\b/i.test(html) && !/logout|esci\b|deconect/i.test(html);
+    if (parsed.endUser == null) {
+      // Fara sesiune valida pagina nu contine niciun pret, dar contine butonul de
+      // login — asa deosebim "cookie expirat" de "produs fara pret".
+      const loggedOut = /REGISTRAZIONE|REGISTRARE|\bLOGIN\b/i.test(html) && !/logout|esci\b|deconect/i.test(html);
+      return {
+        ok: false,
+        price: null,
+        currency: "RON",
+        candidates,
+        reason: loggedOut ? "expired" : "not_found",
+      };
+    }
+
     return {
-      ok: false,
-      price: null,
-      currency: "RON",
+      ok: true,
+      price: parsed.endUser,
+      distributorPrice: parsed.distributor,
+      currency: parsed.currency,
       candidates,
-      reason: loggedOut ? "expired" : "not_found",
     };
+  } finally {
+    await agent.close();
   }
-
-  return {
-    ok: true,
-    price: parsed.endUser,
-    distributorPrice: parsed.distributor,
-    currency: parsed.currency,
-    candidates,
-  };
 }
 
 /* =========================================================================
@@ -621,13 +641,16 @@ export async function fetchProductDetails(
   cookies: string
 ): Promise<{ ok: boolean; details?: ProductDetails; reason?: string }> {
   const url = sourceUrl.startsWith("http") ? sourceUrl : `${BASE}/${sourceUrl.replace(/^\//, "")}`;
+  const agent = createAgent();
   let html: string;
   try {
-    const res = await fetchWithTimeout(url, cookies);
+    const res = await fetchWithTimeout(url, cookies, agent);
     if (!res.ok) return { ok: false, reason: `http_${res.status}` };
     html = await res.text();
   } catch {
     return { ok: false, reason: "network" };
+  } finally {
+    await agent.close();
   }
 
   const prices = parseProductPrices(html);
