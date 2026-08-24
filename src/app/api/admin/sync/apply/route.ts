@@ -7,6 +7,8 @@ const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "olivox2026!";
 
 export const maxDuration = 300;
+// Vezi nota din /api/admin/sync — importul de produse noi bate tot mysnep.
+export const preferredRegion = "fra1";
 
 function checkAuth(request: Request): boolean {
   const auth = request.headers.get("authorization");
