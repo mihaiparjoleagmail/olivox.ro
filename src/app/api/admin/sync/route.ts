@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
-import { fetchSupplierPrice, fetchSupplierCatalog, normalizeCookies, normalizeName, type SupplierProduct } from "@/lib/mysnep";
+import { fetchSupplierPrice, fetchSupplierCatalog, fetchCategoryUrls, normalizeCookies, normalizeName, type SupplierProduct } from "@/lib/mysnep";
 import { displayPrice } from "@/lib/price";
+
+/**
+ * Cate categorii mysnep se citesc intr-o singura executie de functie. Sub
+ * Vercel, dupa in jur de 40 de cereri catre mysnep in aceeasi executie, ceva
+ * se blocheaza mereu in acelasi loc (verificat exhaustiv: nu e continutul,
+ * nu e reteaua catre mysnep — acelasi tur cerut izolat merge instant).
+ * Clientul cere planul de loturi, apoi bate fiecare lot cu un POST separat —
+ * fiecare fiind o executie noua, sub pragul care declanseaza blocajul.
+ */
+const CATEGORY_BATCH_SIZE = 5;
 
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "olivox2026!";
@@ -137,9 +147,28 @@ function slugify(s: string): string {
     .slice(0, 100);
 }
 
+interface SyncBatchBody {
+  /** Lipseste = "da-mi planul de loturi". Prezent = "citeste-le pe astea". */
+  categories?: string[];
+  /** Ce s-a strans deja din loturile anterioare. */
+  accumulated?: SupplierProduct[];
+  failures?: string[];
+  expired?: boolean;
+  partial?: boolean;
+  /** Acesta e ultimul lot — dupa el se face compararea completa si salvarea. */
+  final?: boolean;
+}
+
 /**
  * POST — citeste catalogul furnizorului din paginile de categorie si il compara
  * cu al nostru. NU scrie nimic; scrierea se face din /apply, dupa confirmare.
+ *
+ * Doi pasi, controlati de client (vezi CATEGORY_BATCH_SIZE mai sus):
+ *  1. POST fara `categories` in body -> intoarce planul de loturi (`{type:"plan"}`).
+ *  2. POST cu `categories` (un lot) + ce s-a strans pana acum -> citeste DOAR
+ *     categoriile alea; daca nu e ultimul lot intoarce ce s-a strans
+ *     (`{type:"batch-done"}`), altfel face comparatia completa si salveaza
+ *     (`{type:"done"}`, exact ca inainte).
  *
  * Raspuns NDJSON, ca bara de progres sa se miste in timp real.
  */
@@ -150,6 +179,8 @@ export async function POST(request: Request) {
   if (!cookies) {
     return NextResponse.json({ error: "Nu exista cookie de sesiune mysnep. Adauga PHPSESSID in Setari -> mysnep." }, { status: 400 });
   }
+
+  const body: SyncBatchBody = await request.json().catch(() => ({}));
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -165,11 +196,41 @@ export async function POST(request: Request) {
       const heartbeat = setInterval(() => send({ type: "heartbeat" }), 5000);
 
       try {
-        send({ type: "start", label: "Se citeste catalogul furnizorului..." });
+        if (!body.categories) {
+          // Pasul 1: doar planul de loturi — cerere unica, ieftina, fara risc.
+          send({ type: "start", label: "Se citesc categoriile de la furnizor..." });
+          const categories = await fetchCategoryUrls(cookies);
+          const batches: string[][] = [];
+          for (let i = 0; i < categories.length; i += CATEGORY_BATCH_SIZE) {
+            batches.push(categories.slice(i, i + CATEGORY_BATCH_SIZE));
+          }
+          send({ type: "plan", batches });
+          return;
+        }
 
-        const { products: supplier, expired, partial, failures } = await fetchSupplierCatalog(cookies, (pages, _t, label) => {
-          send({ type: "progress", stage: "catalog", pages, label });
-        });
+        // Pasul 2: citim DOAR lotul cerut si il combinam cu ce a strans clientul.
+        send({ type: "start", label: `Se citesc ${body.categories.length} categorii de la furnizor...` });
+
+        const { products: batchProducts, expired: batchExpired, partial: batchPartial, failures: batchFailures } =
+          await fetchSupplierCatalog(cookies, body.categories, (pages, _t, label) => {
+            send({ type: "progress", stage: "catalog", pages, label });
+          });
+
+        const merged = new Map<string, SupplierProduct>();
+        for (const p of body.accumulated || []) merged.set(`${p.sku}::${normalizeName(p.name)}`, p);
+        for (const [key, p] of batchProducts.entries()) if (!merged.has(key)) merged.set(key, p);
+
+        const failures = [...(body.failures || []), ...batchFailures];
+        const expired = !!body.expired || batchExpired;
+        const partial = !!body.partial || batchPartial;
+
+        if (!body.final) {
+          send({ type: "batch-done", supplierSoFar: [...merged.values()], failuresSoFar: failures, expiredSoFar: expired, partialSoFar: partial });
+          return;
+        }
+
+        // Ultimul lot: comparatia completa, exact ca inainte, dar pe catalogul acumulat.
+        const supplier = merged;
 
         if (expired) {
           send({

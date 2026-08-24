@@ -127,29 +127,82 @@ export default function SincronizarePage() {
     }
   }, []);
 
+  /**
+   * Scanarea se face in loturi mici de categorii, fiecare lot cu propriul POST.
+   * Motiv: sub Vercel, dupa in jur de 40 de cereri catre mysnep in aceeasi
+   * executie de functie, ceva se blocheaza mereu in acelasi loc — un lot mic
+   * inseamna o executie noua, mult sub pragul care declanseaza blocajul.
+   */
+  const postSync = (body: unknown, signal: AbortSignal) =>
+    fetch("/api/admin/sync", {
+      method: "POST",
+      headers: { Authorization: auth, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal,
+    });
+
   const scanNow = async () => {
     setPhase("scanning"); setErrorMsg(""); setSummary(null);
-    setProgress({ done: 0, total: 0, label: "Se citeste catalogul furnizorului..." });
+    setProgress({ done: 0, total: 0, label: "Se citesc categoriile de la furnizor..." });
     const ac = new AbortController(); abortRef.current = ac;
     try {
-      const res = await fetch("/api/admin/sync", { method: "POST", headers: { Authorization: auth }, signal: ac.signal });
-      if (!res.ok || !res.body) {
-        const d = await res.json().catch(() => ({}));
-        setErrorMsg(d?.error || `Eroare ${res.status}`); setPhase("idle"); return;
+      const planRes = await postSync({}, ac.signal);
+      if (!planRes.ok || !planRes.body) {
+        const d = await planRes.json().catch(() => ({}));
+        setErrorMsg(d?.error || `Eroare ${planRes.status}`); setPhase("idle"); return;
       }
-      await readStream(res, (ev) => {
-        if (ev.type === "progress") setProgress({ done: Number(ev.pages) || 0, total: 0, label: String(ev.label || "") });
-        else if (ev.type === "error") { setErrorMsg(String(ev.error)); setPhase("idle"); }
-        else if (ev.type === "done") {
-          const r = ev as unknown as ScanResult;
-          setScan(r);
-          setPickPrices(new Set(r.priceChanges.map((c) => c.id)));
-          setPickStock(new Set((r.stockChanges || []).map((c) => c.id)));
-          setPickNew(new Set()); setPickMissing(new Set());
-          setTab(r.priceChanges.length ? "prices" : r.newProducts.length ? "new" : "missing");
-          setPhase("idle");
-        }
+      let batches: string[][] = [];
+      let planError = "";
+      await readStream(planRes, (ev) => {
+        if (ev.type === "plan") batches = (ev.batches as string[][]) || [];
+        else if (ev.type === "error") planError = String(ev.error);
       });
+      if (planError) { setErrorMsg(planError); setPhase("idle"); return; }
+      if (batches.length === 0) { setErrorMsg("Nu s-a putut citi lista de categorii de la furnizor."); setPhase("idle"); return; }
+
+      let accumulated: unknown[] = [];
+      let failuresAcc: string[] = [];
+      let expiredAcc = false;
+      let partialAcc = false;
+      let pagesBase = 0;
+
+      for (let i = 0; i < batches.length; i++) {
+        const isFinal = i === batches.length - 1;
+        const res = await postSync(
+          { categories: batches[i], accumulated, failures: failuresAcc, expired: expiredAcc, partial: partialAcc, final: isFinal },
+          ac.signal
+        );
+        if (!res.ok || !res.body) {
+          const d = await res.json().catch(() => ({}));
+          setErrorMsg(d?.error || `Eroare ${res.status}`); setPhase("idle"); return;
+        }
+
+        let lastPages = 0;
+        let stopped = false;
+        await readStream(res, (ev) => {
+          if (ev.type === "progress") {
+            lastPages = Number(ev.pages) || 0;
+            setProgress({ done: pagesBase + lastPages, total: 0, label: `Lot ${i + 1}/${batches.length} — ${String(ev.label || "")}` });
+          } else if (ev.type === "error") {
+            setErrorMsg(String(ev.error)); setPhase("idle"); stopped = true;
+          } else if (ev.type === "batch-done") {
+            accumulated = (ev.supplierSoFar as unknown[]) || [];
+            failuresAcc = (ev.failuresSoFar as string[]) || [];
+            expiredAcc = !!ev.expiredSoFar;
+            partialAcc = !!ev.partialSoFar;
+          } else if (ev.type === "done") {
+            const r = ev as unknown as ScanResult;
+            setScan(r);
+            setPickPrices(new Set(r.priceChanges.map((c) => c.id)));
+            setPickStock(new Set((r.stockChanges || []).map((c) => c.id)));
+            setPickNew(new Set()); setPickMissing(new Set());
+            setTab(r.priceChanges.length ? "prices" : r.newProducts.length ? "new" : "missing");
+            setPhase("idle");
+          }
+        });
+        if (stopped) return;
+        pagesBase += lastPages;
+      }
     } catch (e) {
       if ((e as Error).name !== "AbortError") { setErrorMsg(String(e)); setPhase("idle"); }
     }

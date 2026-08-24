@@ -429,11 +429,21 @@ async function crawlCategory(
   return { items: [...byKey.values()], declared, loggedOut };
 }
 
+/**
+ * `categories` explicit (nu mai citeste singura lista) — un singur apel de
+ * functie proceseaza mereu TOATE categoriile date, deci apelantul controleaza
+ * cat de mare e "un tur", trimitandu-i doar un subset. Motivul: sub Vercel,
+ * dupa in jur de 40 de cereri catre mysnep in aceeasi executie, ceva se
+ * blocheaza mereu in acelasi loc (verificat exhaustiv: nu e mysnep, nu e
+ * pagina, nu e reteaua — acelasi tur cerut izolat merge instant). Apelantul
+ * (POST /api/admin/sync) imparte cele ~32 de categorii in loturi mici, fiecare
+ * lot fiind o executie noua de functie, ca sa nu se mai ajunga la prag.
+ */
 export async function fetchSupplierCatalog(
   cookies: string,
+  categories: string[],
   onProgress?: (done: number, total: number, label: string) => void
 ): Promise<{ products: Map<string, SupplierProduct>; expired: boolean; partial: boolean; failures: string[] }> {
-  const categories = await fetchCategoryUrls(cookies);
   const products = new Map<string, SupplierProduct>();
   const failures: string[] = [];
   let pagesDone = 0;
