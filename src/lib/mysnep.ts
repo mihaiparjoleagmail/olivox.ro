@@ -314,20 +314,37 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * fetch() simplu n-are timeout implicit — daca mysnep accepta conexiunea si
- * nu mai raspunde nimic (s-a intamplat sub sesiuni batute des), cererea ramane
- * agatata si scanarea nu se mai termina niciodata. Cu semnalul asta, o pagina
- * blocata pica in cel mult `ms`, se reincearca sau ajunge in "esuate".
+ * nu mai raspunde nimic, cererea ramane agatata si scanarea nu se mai termina
+ * niciodata. Cu semnalul asta, o pagina blocata pica in cel mult `ms`, se
+ * reincearca sau ajunge in "esuate".
  */
 function fetchWithTimeout(url: string, cookies: string, ms = 15000): Promise<Response> {
   return fetch(url, { headers: headersFor(cookies), cache: "no-store", signal: AbortSignal.timeout(ms) });
+}
+
+/**
+ * Timeout "dur", independent de AbortSignal — verificat pe productie ca
+ * AbortSignal.timeout() NU e destul: o cerere se putea agata la conectare
+ * (din mediul Vercel, nu reprodus local) fara ca semnalul de abort sa o mai
+ * opreasca. Promise.race garanteaza ca renuntam dupa `ms`, indiferent ce
+ * face fetch-ul pe fir mai departe (cererea agatata ramane sa moara singura).
+ */
+function raceTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("local-timeout")), ms);
+    promise.then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); }
+    );
+  });
 }
 
 /** O pagina, cu cateva reincercari. O cerere picata inseamna produse "disparute". */
 async function fetchListing(url: string, cookies: string): Promise<string | null> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const r = await fetchWithTimeout(url, cookies);
-      if (r.ok) return await r.text();
+      const r = await raceTimeout(fetchWithTimeout(url, cookies), 12000);
+      if (r.ok) return await raceTimeout(r.text(), 8000);
     } catch {
       /* reincercam — timeout sau eroare de retea */
     }
