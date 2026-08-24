@@ -12,9 +12,28 @@
  * amandoua in acelasi bloc — vezi `parseProductPrices`.
  */
 
+import { Agent } from "undici";
+
 const BASE = "https://www.mysnep.com";
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36";
+
+/**
+ * fetch() global nu are cum sa opreasca o conexiune blocata la faza de
+ * conectare (TCP/TLS) — AbortSignal si Promise.race opresc doar AsTEPTAREA
+ * noastra, nu si socket-ul de dedesubt, care ramane deschis. Verificat pe
+ * productie: dupa ~40 de cereri sincronizarea se agata mereu in acelasi loc
+ * (~15-28s), desi aceeasi cerere, ceruta izolat, raspunde in sub 2s — semn
+ * ca socket-uri blocate se acumuleaza pana epuizeaza agentul implicit.
+ * Cu un Agent propriu si connect timeout strict, o conectare blocata e
+ * distrusa efectiv de Node, nu doar abandonata la nivel de JS.
+ */
+const mysnepAgent = new Agent({
+  connect: { timeout: 6000 },
+  headersTimeout: 12000,
+  bodyTimeout: 12000,
+  keepAliveTimeout: 3000,
+});
 
 export interface PriceCandidate {
   /** Eticheta din stanga cifrei, exact cum apare in pagina. */
@@ -325,7 +344,12 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * reincearca sau ajunge in "esuate".
  */
 function fetchWithTimeout(url: string, cookies: string, ms = 15000): Promise<Response> {
-  return fetch(url, { headers: headersFor(cookies), cache: "no-store", signal: AbortSignal.timeout(ms) });
+  return fetch(url, {
+    headers: headersFor(cookies),
+    cache: "no-store",
+    signal: AbortSignal.timeout(ms),
+    dispatcher: mysnepAgent,
+  } as RequestInit);
 }
 
 /**
@@ -463,7 +487,8 @@ export async function fetchSupplierPrice(
       headers: headersFor(cookies),
       cache: "no-store",
       signal: signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal,
-    });
+      dispatcher: mysnepAgent,
+    } as RequestInit);
   } catch {
     return { ok: false, price: null, currency: "RON", candidates: [], reason: "network" };
   }
