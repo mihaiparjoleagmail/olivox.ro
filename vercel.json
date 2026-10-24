@@ -1,4 +1,5 @@
 {
+  "regions": ["dub1"],
   "functions": {
     "src/app/api/admin/sync/route.ts": {
       "memory": 3009,
