@@ -10,8 +10,10 @@ export async function GET() {
 
   if (!data) return NextResponse.json({});
 
+  // Cache pe CDN: TrackingPixels o cere din browser pe fiecare pagina. 1h.
+  const headers = { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" };
   try {
-    return NextResponse.json(JSON.parse(data.value));
+    return NextResponse.json(JSON.parse(data.value), { headers });
   } catch {
     return NextResponse.json({});
   }

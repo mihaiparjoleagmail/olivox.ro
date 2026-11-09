@@ -89,18 +89,40 @@ export const DEFAULT_CONFIG: SiteConfig = {
   metaDescription: "Catalog complet Snep in Romania: suplimente alimentare pe baza de plante, programe nutritionale, alimente functionale, cosmetice naturale. Livrare rapida in 3-5 zile lucratoare.",
 };
 
-let cachedConfig: SiteConfig | null = null;
-let cacheTime = 0;
-const CACHE_TTL = 5 * 60 * 1000;
+/**
+ * Citirea site_config trece prin Data Cache-ul Next (comun tuturor instantelor
+ * Vercel), nu prin memoria fiecarei instante (era 5 min per proces; pe
+ * husepersonalizate acelasi tipar dadea ~900 citiri/zi, 2026-11-09).
+ * 1 zi; salvarea din admin goleste tag-ul „site-config" (invalidateSiteConfigCache).
+ * O eroare de DB arunca, deci NU se pune in cache.
+ * `next/cache` si supabase se importa dinamic: fisierul e importat si din client.
+ */
+async function citesteSiteConfig(): Promise<unknown> {
+  const { unstable_cache } = await import("next/cache");
+  return unstable_cache(
+    async (): Promise<unknown> => {
+      const { supabase } = await import("./supabase");
+      const { data, error } = await supabase.from("settings").select("value").eq("key", "site_config").maybeSingle();
+      if (error) throw new Error(error.message);
+      return data?.value ?? null;
+    },
+    ["site-config"],
+    { revalidate: 86400, tags: ["site-config"] }
+  )();
+}
+
+export async function invalidateSiteConfigCache(): Promise<void> {
+  try {
+    const { revalidateTag } = await import("next/cache");
+    revalidateTag("site-config");
+  } catch {}
+}
 
 export async function getSiteConfig(): Promise<SiteConfig> {
-  if (cachedConfig && Date.now() - cacheTime < CACHE_TTL) return cachedConfig;
-
   try {
-    const { supabase } = await import("./supabase");
-    const { data } = await supabase.from("settings").select("value").eq("key", "site_config").single();
-    if (data?.value) {
-      const parsed = typeof data.value === "string" ? JSON.parse(data.value) : data.value;
+    const value = await citesteSiteConfig();
+    if (value) {
+      const parsed = typeof value === "string" ? JSON.parse(value) : value;
       const merged = { ...DEFAULT_CONFIG, ...parsed };
       // shippingCost trebuie sa fie mereu un numar (0 = livrare gratuita, valoare valida).
       const ship = Number(merged.shippingCost);
@@ -111,13 +133,9 @@ export async function getSiteConfig(): Promise<SiteConfig> {
       merged.featuredSlugs = Array.isArray(merged.featuredSlugs) && merged.featuredSlugs.length > 0
         ? merged.featuredSlugs.filter((s: unknown) => typeof s === "string" && s.trim() !== "")
         : DEFAULT_CONFIG.featuredSlugs;
-      cachedConfig = merged;
-      cacheTime = Date.now();
       return merged;
     }
   } catch {}
 
-  cachedConfig = DEFAULT_CONFIG;
-  cacheTime = Date.now();
   return DEFAULT_CONFIG;
 }

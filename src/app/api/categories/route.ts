@@ -32,5 +32,9 @@ export async function GET() {
     product_count: counts[c.slug] ?? c.product_count ?? 0,
   }));
 
-  return NextResponse.json(enriched);
+  // Cache pe CDN: Header-ul o cere din browser pe FIECARE pagina, iar ruta face
+  // si un scan al tuturor produselor (numaratori). 10 min.
+  return NextResponse.json(enriched, {
+    headers: { "Cache-Control": "public, s-maxage=600, stale-while-revalidate=86400" },
+  });
 }

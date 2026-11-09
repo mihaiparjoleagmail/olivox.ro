@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import { invalidateSiteConfigCache } from "@/lib/site-config";
 
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "olivox2026!";
@@ -38,6 +39,10 @@ export async function POST(request: Request) {
     await supabase
       .from("settings")
       .upsert({ key, value: jsonValue }, { onConflict: "key" });
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "site_config")) {
+    await invalidateSiteConfigCache();
   }
 
   return NextResponse.json({ success: true });
