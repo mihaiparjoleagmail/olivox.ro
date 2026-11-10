@@ -1,5 +1,14 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import { revalidatePath } from "next/cache";
+
+function invalidateArticles() {
+  try {
+    revalidatePath("/articole");
+    revalidatePath("/articole/[slug]", "page");
+    revalidatePath("/sitemap.xml");
+  } catch {}
+}
 
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "olivox2026!";
@@ -37,5 +46,6 @@ export async function POST(request: Request) {
     meta_description: body.meta_description || "",
   }).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  invalidateArticles();
   return NextResponse.json(data);
 }

@@ -8,7 +8,8 @@ import { displayPrice, schemaPrice } from "@/lib/price";
 // Pillar page for "kalosnep" — 475 impressions/month at position 9.5 with only
 // the capsule product page ranking. Prices come from the DB so the comparison
 // table and the Offer schema never drift from the catalog.
-export const revalidate = 900;
+// Preturile sunt golite pe loc de invalidateCatalog() (lib/revalidate-catalog.ts).
+export const revalidate = 86400;
 
 const URL = "https://olivox.ro/kalosnep";
 

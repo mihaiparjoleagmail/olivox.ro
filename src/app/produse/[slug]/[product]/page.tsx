@@ -13,7 +13,18 @@ interface Props {
 
 // Product pages are server-rendered so the name, description, ingredients and
 // usage notes exist in the HTML Google receives — not only after hydration.
-export const revalidate = 300;
+//
+// ISR: pagina se genereaza la prima vizita si se serveste apoi din CDN-ul
+// Vercel, fara functie si fara Supabase. Fara generateStaticParams (chiar gol),
+// Next 15 o randa pe server la FIECARE cerere (Cache-Control: no-store) —
+// cost Vercel pe fiecare vizita/crawler. Pretul nu ramane vechi: orice scriere
+// din admin sau din sincronizare cheama invalidateCatalog() (revalidatePath).
+// Plafonul efectiv e TTL-ul din lib/catalog-cache.ts (1 ora).
+export const revalidate = 86400;
+
+export function generateStaticParams() {
+  return [];
+}
 
 const OPTIMIZED_IMAGE_HOSTS = ["media.ghidulfunerar.ro", "huse.gravpoint.ro"];
 

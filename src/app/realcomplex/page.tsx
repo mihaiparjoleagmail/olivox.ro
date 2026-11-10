@@ -9,7 +9,8 @@ import { displayPrice, schemaPrice } from "@/lib/price";
 // URL-uri diferite (plic, tab, articolul-ghid) care se canibalizau intre ele.
 // Aceeasi reteta ca /realfibre si /kalosnep: preturile vin din DB, ca tabelul
 // comparativ si schema Offer sa nu ramana niciodata in urma catalogului.
-export const revalidate = 900;
+// Preturile sunt golite pe loc de invalidateCatalog() (lib/revalidate-catalog.ts).
+export const revalidate = 86400;
 
 const URL = "https://olivox.ro/realcomplex";
 

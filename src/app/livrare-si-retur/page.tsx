@@ -22,7 +22,9 @@ export const metadata: Metadata = {
 };
 
 // Costul de transport / datele firmei vin din site_config — reimprospatam periodic.
-export const revalidate = 300;
+// Golita pe loc la salvarea setarilor (revalidateTag("site-config") in
+// lib/site-config.ts); ziua e doar plasa de siguranta.
+export const revalidate = 86400;
 
 export default async function LivrareReturPage() {
   const { shippingCost, shippingTiers, shippingLabel } = await getSiteConfig();

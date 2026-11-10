@@ -7,7 +7,8 @@ import { displayPrice, schemaPrice } from "@/lib/price";
 
 // Pillar page for "realfibre". GSC shows real demand for "probiotic realfibre",
 // which is the exact confusion this page exists to clear up.
-export const revalidate = 900;
+// Preturile sunt golite pe loc de invalidateCatalog() (lib/revalidate-catalog.ts).
+export const revalidate = 86400;
 
 const URL = "https://olivox.ro/realfibre";
 

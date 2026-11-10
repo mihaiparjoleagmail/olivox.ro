@@ -6,7 +6,8 @@ import { displayPrice, schemaPrice } from "@/lib/price";
 
 // Pillar page for the brand keyword "olivox". Prices come from the DB so the
 // comparison table and the Offer schema never drift from the catalog.
-export const revalidate = 900;
+// Preturile sunt golite pe loc de invalidateCatalog() (lib/revalidate-catalog.ts).
+export const revalidate = 86400;
 
 const URL = "https://olivox.ro/olivox-supliment-antioxidant";
 const TITLE = "Olivox: ce este, beneficii, mod de utilizare si preturi";

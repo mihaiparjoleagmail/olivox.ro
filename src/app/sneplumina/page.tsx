@@ -6,7 +6,8 @@ import { displayPrice, schemaPrice } from "@/lib/price";
 
 // Pillar page for "sneplumina". The term currently splits across the shampoo,
 // the box and the argan oil product pages — this page is the hub.
-export const revalidate = 900;
+// Preturile sunt golite pe loc de invalidateCatalog() (lib/revalidate-catalog.ts).
+export const revalidate = 86400;
 
 const URL = "https://olivox.ro/sneplumina";
 const TITLE = "SnepLumina: sampon, masca, ulei de argan si BOX";

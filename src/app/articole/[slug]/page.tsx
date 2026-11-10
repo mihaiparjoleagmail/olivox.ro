@@ -7,6 +7,14 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+// ISR: servita din CDN, nu randata la fiecare vizita. Fara generateStaticParams
+// Next 15 o trata ca dinamica. Golita din admin (api/admin/articles).
+export const revalidate = 86400;
+
+export function generateStaticParams() {
+  return [];
+}
+
 interface Article {
   id: number;
   slug: string;

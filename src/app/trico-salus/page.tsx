@@ -6,7 +6,8 @@ import { displayPrice, schemaPrice } from "@/lib/price";
 
 // Pillar page for "trico salus". The line has six products and four distinct
 // protocols; today every query lands on whichever shampoo Google picks.
-export const revalidate = 900;
+// Preturile sunt golite pe loc de invalidateCatalog() (lib/revalidate-catalog.ts).
+export const revalidate = 86400;
 
 const URL = "https://olivox.ro/trico-salus";
 const TITLE = "Trico-Salus Solution: linia completa si protocoalele";
