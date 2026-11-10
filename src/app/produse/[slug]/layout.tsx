@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { supabase } from "@/lib/supabase";
+import { getCategoryCached, getCategoryProductsCached } from "@/lib/catalog-cache";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { schemaPrice } from "@/lib/price";
@@ -9,23 +9,11 @@ interface Props {
   children: React.ReactNode;
 }
 
-async function getCategory(slug: string) {
-  const { data } = await supabase
-    .from("product_categories")
-    .select("id, name, slug, description, image_url, meta_title, meta_description")
-    .eq("slug", slug)
-    .single();
-  return data;
-}
+// Datele vin din Data Cache (lib/catalog-cache.ts), golit din admin.
+const getCategory = (slug: string) => getCategoryCached(slug);
 
 async function getCategoryProducts(slug: string) {
-  const { data } = await supabase
-    .from("products")
-    .select("id, name, slug, price, currency, r2_image_url, image_url, stock_status, short_description")
-    .contains("category_slugs", [slug])
-    .order("id", { ascending: false })
-    .limit(20);
-  return data || [];
+  return (await getCategoryProductsCached(slug)).slice(0, 20);
 }
 
 function truncate(str: string, max: number): string {

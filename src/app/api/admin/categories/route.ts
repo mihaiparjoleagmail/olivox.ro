@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import { invalidateCatalog } from "@/lib/revalidate-catalog";
 
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "olivox2026!";
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
     name, slug, image_url: image_url || "", sort_order: 0,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  invalidateCatalog();
   return NextResponse.json({ success: true });
 }
 
@@ -35,6 +37,7 @@ export async function PATCH(request: Request) {
   const { error } = await supabase.from("product_categories").update(update).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   // Bust cache for affected pages
+  invalidateCatalog();
   try {
     revalidatePath("/categorii");
     revalidatePath("/");
@@ -51,6 +54,7 @@ export async function DELETE(request: Request) {
   const { data: before } = await supabase.from("product_categories").select("slug").eq("id", id).single();
   const { error } = await supabase.from("product_categories").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  invalidateCatalog();
   try {
     revalidatePath("/categorii");
     revalidatePath("/");

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { invalidateCatalog } from "@/lib/revalidate-catalog";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 
 const WOO_URL = "https://tablostar.ro/wp-json/wc/v3";
@@ -67,6 +68,7 @@ export async function GET(request: Request) {
   }
 
   const hasMore = page < totalPages;
+  if (updated > 0) invalidateCatalog();
 
   return NextResponse.json({
     page,

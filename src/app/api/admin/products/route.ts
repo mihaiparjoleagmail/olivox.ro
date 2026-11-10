@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import { cleanContentHtml, cleanContentText } from "@/lib/html-clean";
+import { invalidateCatalog } from "@/lib/revalidate-catalog";
 
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "olivox2026!";
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
     stock_status: body.stock_status || "",
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  invalidateCatalog();
   return NextResponse.json({ success: true });
 }
 
@@ -79,6 +81,7 @@ export async function PATCH(request: Request) {
   }
   const { error } = await supabase.from("products").update(update).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  invalidateCatalog();
   return NextResponse.json({ success: true });
 }
 
@@ -87,5 +90,6 @@ export async function DELETE(request: Request) {
   const { id } = await request.json();
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  invalidateCatalog();
   return NextResponse.json({ success: true });
 }

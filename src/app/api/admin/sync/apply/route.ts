@@ -179,6 +179,16 @@ export async function POST(request: Request) {
         send({ type: "error", error: e instanceof Error ? e.message : String(e) });
       } finally {
         clearInterval(heartbeat);
+        // Preturile si stocul de pe paginile de produs stau in Data Cache
+        // (lib/catalog-cache.ts). Golirea se cere printr-un apel separat: aici
+        // suntem in interiorul stream-ului, dupa ce handler-ul a intors deja
+        // raspunsul, iar revalidateTag chemat acum nu e garantat sa se aplice.
+        try {
+          await fetch(new URL("/api/admin/revalidate", request.url), {
+            method: "POST",
+            headers: { authorization: request.headers.get("authorization") || "" },
+          });
+        } catch {}
         controller.close();
       }
     },

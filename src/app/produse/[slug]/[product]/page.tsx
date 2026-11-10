@@ -200,7 +200,7 @@ export default async function ProductPage({ params }: Props) {
             {related.map((r) => (
               <a key={r.id} href={`/produse/${categorySlug}/${r.slug}`} className="product-card">
                 <div className="product-card__img-wrap">
-                  <img src={r.r2_image_url || r.image_url} alt={r.name} className="product-card__img" loading="lazy" />
+                  <img src={r.r2_image_url || r.image_url || undefined} alt={r.name} className="product-card__img" loading="lazy" />
                 </div>
                 <div className="product-card__info">
                   <h3 className="product-card__name">{r.name}</h3>

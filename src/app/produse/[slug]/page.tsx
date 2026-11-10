@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { getCategoryCached, getCategoryProductsCached } from "@/lib/catalog-cache";
 import type { Metadata } from "next";
 import { displayPrice } from "@/lib/price";
 import { pillarsForCategory } from "@/lib/pillars";
@@ -15,11 +15,8 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page || "1", 10));
 
-  const { count } = await supabase
-    .from("products")
-    .select("id", { count: "exact", head: true })
-    .contains("category_slugs", [slug]);
-  const totalPages = Math.max(1, Math.ceil((count || 0) / PER_PAGE));
+  const count = (await getCategoryProductsCached(slug)).length;
+  const totalPages = Math.max(1, Math.ceil(count / PER_PAGE));
 
   const base = `https://olivox.ro/produse/${slug}`;
   const canonical = page === 1 ? base : `${base}?page=${page}`;
@@ -37,30 +34,17 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   };
 }
 
-async function getCategory(slug: string) {
-  const { data } = await supabase
-    .from("product_categories")
-    .select("name, description")
-    .eq("slug", slug)
-    .single();
-  return data;
-}
+// Datele vin din Data Cache (lib/catalog-cache.ts), golit din admin; pagina e
+// dinamica (?page=), deci fara cache fiecare vizita citea din baza.
+const getCategory = (slug: string) => getCategoryCached(slug);
 
 async function getProducts(categorySlug: string, page: number) {
+  const all = await getCategoryProductsCached(categorySlug);
   const from = (page - 1) * PER_PAGE;
-  const to = from + PER_PAGE - 1;
-
-  const { data, count } = await supabase
-    .from("products")
-    .select("id, name, slug, r2_image_url, image_url, price", { count: "exact" })
-    .contains("category_slugs", [categorySlug])
-    .order("id", { ascending: false })
-    .range(from, to);
-
   return {
-    products: data || [],
-    total: count || 0,
-    totalPages: Math.ceil((count || 0) / PER_PAGE),
+    products: all.slice(from, from + PER_PAGE),
+    total: all.length,
+    totalPages: Math.ceil(all.length / PER_PAGE),
   };
 }
 
@@ -177,7 +161,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           {products.map((prod) => (
             <a key={prod.id} href={`/produse/${slug}/${prod.slug}`} className="product-card">
               <div className="product-card__img-wrap">
-                <img src={prod.r2_image_url || prod.image_url} alt={prod.name} className="product-card__img" loading="lazy" />
+                <img src={prod.r2_image_url || prod.image_url || undefined} alt={prod.name} className="product-card__img" loading="lazy" />
               </div>
               <div className="product-card__info">
                 <h3 className="product-card__name">{prod.name}</h3>
